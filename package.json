@@ -23,7 +23,8 @@
         "prepare": "husky",
         "commit": "cz",
         "clean": "del-cli dist/ coverage/ *.log",
-		"validate:branch": "validate-branch"
+        "validate:branch": "validate-branch",
+        "docker:dev": "docker compose -f .docker/docker-compose.dev.yml up --build"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
@@ -47,5 +48,9 @@
         "commitizen": {
             "path": "./node_modules/cz-conventional-changelog"
         }
+    },
+    "dependencies": {
+        "express": "^5.1.0",
+        "mongoose": "^8.13.2"
     }
 }
