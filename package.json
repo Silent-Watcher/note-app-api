@@ -24,7 +24,7 @@
         "commit": "cz",
         "clean": "del-cli dist/ coverage/ *.log",
         "validate:branch": "validate-branch",
-        "docker:dev": "docker compose -f .docker/"
+        "docker:dev": "docker compose -f .docker/docker-compose.dev.yml up --build"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
