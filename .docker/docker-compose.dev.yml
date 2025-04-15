@@ -10,5 +10,16 @@ services:
     volumes:
       - ..:/usr/src/app
       - /usr/src/app/node_modules
+    depends_on:
+      - mongo
     env_file:
       - ./env/.env.dev
+  mongo:
+    container_name: db-mongo
+    image: mongo:latest
+    restart: always
+    environment:
+       MONGO_INITDB_ROOT_USERNAME: admin
+       MONGO_INITDB_ROOT_PASSWORD: 1234
+    ports:
+       - "27017:27017"
