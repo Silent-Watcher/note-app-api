@@ -1,3 +1,12 @@
+/**
+ * A frozen object containing standard HTTP status codes mapped to their numeric values.
+ *
+ * This object serves as a reference for HTTP response status codes, including informational (1xx),
+ * success (2xx), redirection (3xx), client error (4xx), and server error (5xx) responses.
+ *
+ * @readonly
+ * @enum {number}
+ */
 const CODES = Object.freeze({
 	CONTINUE: 100,
 	SWITCHING_PROTOCOLS: 101,
@@ -59,6 +68,25 @@ const CODES = Object.freeze({
 	NETWORK_AUTHENTICATION_REQUIRED: 511,
 });
 
+/**
+ * A proxy that allows bidirectional access between HTTP status code names and numbers.
+ *
+ * You can:
+ * - Access status codes by name: `httpStatus.OK` → `200`
+ * - Get the status code name by number: `httpStatus[200]` → `"OK"`
+ *
+ * If the requested property is not a valid status name or number, it returns `undefined`.
+ *
+ * @typedef {object} httpStatus
+ * @property {number} [statusName] - Access the numeric value by using a status name (e.g. `OK`, `NOT_FOUND`).
+ * @property {string | undefined} [code] - Access the status name by using a numeric code (e.g. `200`, `404`).
+ *
+ * @example
+ * httpStatus.NOT_FOUND // 404
+ * httpStatus[404] // "NOT_FOUND"
+ *
+ * @constant
+ */
 export const httpStatus = new Proxy(CODES, {
 	get(CODES, property) {
 		if (property in CODES) {
