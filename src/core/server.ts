@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { env } from 'node:process';
+import { logger } from '#app/common/utils/logger.util';
 import { app } from './app';
 
 /**
@@ -19,6 +20,6 @@ import { app } from './app';
 export function runServer(port: string = env.APP_PORT as string): void {
 	const server = createServer(app);
 	server.listen(port, () => {
-		console.log(`server is up and running on port ${port}`);
+		logger.info(`server is up and running on port ${port}`);
 	});
 }
