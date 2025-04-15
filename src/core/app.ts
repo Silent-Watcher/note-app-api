@@ -1,5 +1,6 @@
 import express from 'express';
 import type { Request, Response } from 'express';
+import { httpStatus } from '#app/common/helpers/httpstatus.helper';
 
 export const app = express();
 
@@ -15,7 +16,7 @@ export const app = express();
  * @returns {void}
  */
 app.get('/health', (req: Request, res: Response) => {
-	res.status(200).send({
+	res.status(httpStatus.OK).send({
 		code: res.statusCode,
 		message: 'server is up ...',
 	});
