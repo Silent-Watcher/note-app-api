@@ -1,0 +1,14 @@
+services:
+  app:
+    container_name: app-dev
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    restart: always
+    volumes:
+      - ..:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - ./env/.env.dev
