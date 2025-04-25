@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { env } from 'node:process';
 import { logger } from '#app/common/utils/logger.util';
+import { CONFIG } from '#app/config';
 import { app } from './app';
 
 /**
@@ -17,7 +18,7 @@ import { app } from './app';
  * @returns {void}
  *
  */
-export function runServer(port: string = env.APP_PORT as string): void {
+export function runServer(port: string = String(CONFIG.APP.PORT)): void {
 	const server = createServer(app);
 	server.listen(port, () => {
 		logger.info(`server is up and running on port ${port}`);

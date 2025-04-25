@@ -1,5 +1,5 @@
-import { env } from 'node:process';
 import mongoose from 'mongoose';
+import { CONFIG } from '#app/config';
 
 /**
  * Establishes a connection to the MongoDB database using Mongoose.
@@ -18,11 +18,14 @@ import mongoose from 'mongoose';
  * @returns {Promise<typeof import("mongoose")>} A promise that resolves when the connection is successful.
  */
 export function connectToMongo() {
-	return mongoose.connect(`mongodb://${env.MONGO_HOST}:${env.MONGO_PORT}`, {
-		serverSelectionTimeoutMS: 2000,
-		auth: {
-			password: env.MONGO_PASSWORD,
-			username: env.MONGO_USERNAME,
+	return mongoose.connect(
+		`mongodb://${CONFIG.DB.DEV.HOST}:${CONFIG.DB.DEV.PORT}`,
+		{
+			serverSelectionTimeoutMS: 2000,
+			auth: {
+				username: CONFIG.DB.DEV.USERNAME,
+				password: CONFIG.DB.DEV.PASSWORD,
+			},
 		},
-	});
+	);
 }
