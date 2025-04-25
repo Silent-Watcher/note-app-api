@@ -1,5 +1,4 @@
 import { createServer } from 'node:http';
-import { env } from 'node:process';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
 import { app } from './app';

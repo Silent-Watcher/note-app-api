@@ -20,6 +20,8 @@
         "baseUrl": ".",
         "paths": {
             "#app/*": ["src/*"]
-        }
+        },
+
+		"typeRoots": ["./src/common/types/**" , "./node_modules/@types/**"],
     }
 }

@@ -1,8 +1,11 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus.helper';
+import { extractVersion } from '#app/common/middlewares/extractVersion';
 
 export const app = express();
+
+app.use(extractVersion());
 
 /**
  * Health check endpoint.
