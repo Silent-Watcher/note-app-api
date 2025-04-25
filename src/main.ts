@@ -1,4 +1,5 @@
 import { connectToMongo } from '#app/config/db/mongo.condig';
+import { logger } from './common/utils/logger.util';
 import { runServer } from './core/server';
 
 /**
@@ -12,6 +13,11 @@ import { runServer } from './core/server';
  * @function
  * @returns {void}
  */
-Promise.all([connectToMongo()]).then(() => {
-	runServer();
-});
+Promise.all([connectToMongo()])
+	.then(() => {
+		runServer();
+	})
+	.catch((err) => {
+		logger.error(`Error starting the application: ${err.message}`);
+		process.exit(1);
+	});
