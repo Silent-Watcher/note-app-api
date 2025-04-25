@@ -1,7 +1,7 @@
 import { logger } from '#app/common/utils/logger.util';
 import { connectToMongo } from '#app/config/db/mongo.condig';
-import { _env } from '#app/config/env.config';
 import { runServer } from '#app/core/server';
+
 /**
  * Initializes the application by connecting to required services and starting the server.
  *

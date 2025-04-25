@@ -2,8 +2,17 @@ import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { levelNames, logger } from '#app/common/utils/logger.util';
 
+/**
+ * Array of valid log levels extracted from pino.levels.values.
+ * Used to validate the LOG_LEVEL environment variable.
+ * @constant logLevels
+ * @type {[string, ...string[]]}
+ */
 const logLevels = levelNames as [string, ...string[]];
 
+/**
+ * Zod schema for validating environment variables.
+ */
 const zEnv = z.object({
 	NODE_ENV: z.enum(['development', 'test', 'production']),
 
@@ -33,8 +42,15 @@ const zEnv = z.object({
 	}),
 });
 
+/**
+ * Type representing the validated environment variables.
+ */
 export type Env = z.infer<typeof zEnv>;
 
+/**
+ * Result of parsing and validating process.env against the zEnv schema.
+ * @type {{ success: boolean; data?: Env; error?: import('zod').ZodError }}
+ */
 const zEnvValidationResult = zEnv.safeParse(process.env);
 
 if (!zEnvValidationResult.success) {
@@ -44,10 +60,18 @@ if (!zEnvValidationResult.success) {
 	process.exit(1);
 }
 
+/**
+ * Validated environment variables.
+ * @constant _env
+ * @type {Env}
+ */
 export const _env = zEnvValidationResult.data;
 
 declare global {
 	namespace NodeJS {
+		/**
+		 * Extend NodeJS.ProcessEnv interface with validated env variables.
+		 */
 		interface ProcessEnv extends Env {}
 	}
 }
