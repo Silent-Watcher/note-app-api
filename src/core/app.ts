@@ -22,5 +22,6 @@ app.get('/health', (req: Request, res: Response) => {
 	res.status(httpStatus.OK).send({
 		code: res.statusCode,
 		message: 'server is up ...',
+		version: req.apiVersion,
 	});
 });

@@ -16,9 +16,10 @@ export function extractVersion(defaultVersion = '1') {
 	return (req: Request, res: Response, next: NextFunction) => {
 		let version = req.headers['x-api-version'];
 		if (version && (!/^\d+$/.test(version as string) || version === '0')) {
-			return res
-				.status(400)
-				.json({ error: 'Invalid X-API-Version header format' });
+			res.status(400).json({
+				error: 'Invalid X-API-Version header format',
+			});
+			return;
 		}
 
 		if (!version) {
