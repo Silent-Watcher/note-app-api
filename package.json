@@ -28,6 +28,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
+        "@types/bcrypt": "^5.0.2",
         "@types/express": "^5.0.1",
         "@types/node": "^22.13.13",
         "@types/supertest": "^6.0.3",
@@ -49,6 +50,8 @@
         }
     },
     "dependencies": {
+        "bcrypt": "^5.1.1",
+        "dayjs": "^1.11.13",
         "express": "^5.1.0",
         "mongoose": "^8.13.2",
         "pino": "^9.6.0",

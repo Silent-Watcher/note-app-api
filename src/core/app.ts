@@ -6,6 +6,7 @@ import { extractVersion } from '#app/common/middlewares/extractVersion';
 
 export const app = express();
 
+app.use(express.json(), express.urlencoded({ extended: false }));
 app.use(extractVersion());
 app.use(apiRouter);
 

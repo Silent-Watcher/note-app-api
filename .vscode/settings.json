@@ -45,5 +45,6 @@
         "**/*.yaml": false,
         "**/Makefile": false,
         "**/*.sh": false
-    }
+    },
+    "typescript.tsdk": "node_modules/typescript/lib"
 }
