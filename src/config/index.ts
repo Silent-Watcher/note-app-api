@@ -30,7 +30,4 @@ export const CONFIG = Object.freeze({
 			PASSWORD: _env.MONGO_PASSWORD,
 		}),
 	}),
-	LOGGER: Object.freeze({
-		LEVEL: _env.LOG_LEVEL,
-	}),
 });

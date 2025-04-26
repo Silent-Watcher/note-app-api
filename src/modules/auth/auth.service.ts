@@ -6,6 +6,8 @@ import {
 } from '#app/modules/users/user.repository';
 
 import type { Document } from 'mongoose';
+import { httpStatus } from '#app/common/helpers/httpstatus';
+import { createHttpError } from '#app/common/utils/http.util';
 import type { IAuthRepository } from './auth.repository';
 import { authRepository } from './auth.repository';
 
@@ -19,10 +21,14 @@ const createAuthService = (
 ) => ({
 	async register(createUserDto: CreateUserDto) {
 		const { email, password } = createUserDto;
-		console.log('password: ', password);
 		// check if the email is already in use
 		const emailTaken = await userRepo.findOneByEmail(email);
-		if (emailTaken) throw new Error('email is already in use');
+		if (emailTaken) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD REQUEST',
+				message: 'email is already in use',
+			});
+		}
 		// encrypt the user password
 		const hashedPassword = await hash(password, 10);
 		// use repo in order to save the user

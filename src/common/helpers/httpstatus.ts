@@ -66,7 +66,7 @@ const CODES = Object.freeze({
 	HTTP_VERSION_NOT_SUPPORTED: 505,
 	INSUFFICIENT_STORAGE: 507,
 	NETWORK_AUTHENTICATION_REQUIRED: 511,
-});
+} as const);
 
 /**
  * A proxy that allows bidirectional access between HTTP status code names and numbers.
@@ -103,3 +103,8 @@ export const httpStatus = new Proxy(CODES, {
 		return undefined;
 	},
 });
+
+/**
+ * All numeric values in CODES, e.g. 100 | 101 | … | 500
+ */
+export type HttpStatusCode = (typeof CODES)[keyof typeof CODES];
