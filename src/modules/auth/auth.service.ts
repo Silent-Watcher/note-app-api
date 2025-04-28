@@ -5,21 +5,31 @@ import {
 	userRepository,
 } from '#app/modules/users/user.repository';
 
+import jwt from 'jsonwebtoken';
 import type { Document } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
+import { CONFIG } from '#app/config';
 import type { IAuthRepository } from './auth.repository';
 import { authRepository } from './auth.repository';
 
 export interface IAuthService {
-	registerV1(createUserDto: CreateUserDto): Promise<Document>;
+	registerV1(createUserDto: CreateUserDto): Promise<{
+		newUser: Document;
+		accessToken: string;
+		refreshToken: string;
+	}>;
 }
 
 const createAuthService = (
 	repo: IAuthRepository,
 	userRepo: IUserRepository,
 ) => ({
-	async registerV1(createUserDto: CreateUserDto) {
+	async registerV1(createUserDto: CreateUserDto): Promise<{
+		newUser: Document;
+		accessToken: string;
+		refreshToken: string;
+	}> {
 		const { email, password } = createUserDto;
 		// check if the email is already in use
 		const emailTaken = await userRepo.findOneByEmail(email);
@@ -36,8 +46,21 @@ const createAuthService = (
 			email,
 			password: hashedPassword,
 		});
+
 		// issue the access token and the refresh token
-		return newUser;
+		const accessToken = jwt.sign(
+			{ userId: newUser._id },
+			CONFIG.SECRET.ACCESS_TOKEN,
+			{ expiresIn: '5m' },
+		);
+
+		const refreshToken = jwt.sign(
+			{ userId: newUser._id },
+			CONFIG.SECRET.REFRESH_TOKEN,
+			{ expiresIn: '1d' },
+		);
+
+		return { newUser, accessToken, refreshToken };
 	},
 });
 

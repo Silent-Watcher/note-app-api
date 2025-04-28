@@ -8,13 +8,21 @@ const createAuthController = (service: IAuthService) => ({
 	async registerV1(req: Request, res: Response, next: NextFunction) {
 		try {
 			const createUserDto = req.body as CreateUserDto;
-			const newUser = (
-				await service.registerV1(createUserDto)
-			).toObject();
-			const userObject = newUser;
+			const { newUser, accessToken, refreshToken } =
+				await service.registerV1(createUserDto);
+			const userObject = newUser.toObject();
+
+			res.cookie('refresh_token', refreshToken, {
+				httpOnly: true,
+				sameSite: 'strict',
+				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+				path: '/refresh',
+			});
+
 			res.sendSuccess(
 				httpStatus.CREATED,
 				{
+					accessToken,
 					user: { _id: userObject._id, email: userObject.email },
 				},
 				'user registered successfully',

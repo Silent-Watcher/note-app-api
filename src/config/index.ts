@@ -30,4 +30,8 @@ export const CONFIG = Object.freeze({
 			PASSWORD: _env.MONGO_PASSWORD,
 		}),
 	}),
+	SECRET: {
+		REFRESH_TOKEN: _env.REFRESH_TOKEN_SECRET,
+		ACCESS_TOKEN: _env.ACCESS_TOKEN_SECRET,
+	},
 });
