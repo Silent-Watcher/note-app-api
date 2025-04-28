@@ -1,7 +1,7 @@
 import { hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import type { Document } from 'mongoose';
+import type { Document, Types, UpdateResult } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
 import { CONFIG } from '#app/config';
@@ -23,6 +23,8 @@ export interface IAuthService {
 		accessToken: string;
 		refreshToken: string;
 	}>;
+
+	invalidateAllTokens(user: Types.ObjectId): Promise<UpdateResult>;
 }
 
 const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
@@ -109,7 +111,6 @@ const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
 		const userId = decoded.userId;
 
 		const doc = await refreshTokenRepo.findOne(refreshToken, userId);
-		console.log('doc: ', doc);
 
 		if (!doc) {
 			throw createHttpError(httpStatus.UNAUTHORIZED, {
@@ -169,6 +170,16 @@ const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
 		});
 
 		return { refreshToken: newRefreshToken, accessToken: newAccessToken };
+	},
+
+	/**
+	 * Invalidates all refresh tokens associated with the given user.
+	 *
+	 * @param {Types.ObjectId} user - The ObjectId of the user whose tokens should be invalidated.
+	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the update operation.
+	 */
+	async invalidateAllTokens(user: Types.ObjectId): Promise<UpdateResult> {
+		return refreshTokenRepo.invalidateMany(user);
 	},
 });
 

@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import type { IAuthService } from './auth.service';
@@ -62,6 +63,13 @@ const createAuthController = (service: IAuthService) => ({
 	 */
 	async refreshTokensV1(req: Request, res: Response, next: NextFunction) {
 		try {
+			if (!req.user) {
+				res.sendError(httpStatus.UNAUTHORIZED, {
+					code: 'UNAUTHORIZED',
+					message: 'please login',
+				});
+			}
+
 			const refreshToken = req.cookies.refresh_token;
 			if (!refreshToken) {
 				res.sendError(httpStatus.UNAUTHORIZED, {
@@ -88,6 +96,21 @@ const createAuthController = (service: IAuthService) => ({
 					accessToken: newAccessToken,
 				},
 				'token refreshed successfully',
+			);
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async logoutV1(req: Request, res: Response, next: NextFunction) {
+		try {
+			await service.invalidateAllTokens(req.user?._id as Types.ObjectId);
+			req.user = undefined;
+			res.clearCookie('refresh_token', { path: '/auth/refreshs' });
+			res.sendSuccess(
+				httpStatus.OK,
+				{},
+				'You have been logged out. please invalidate the access token !',
 			);
 		} catch (error) {
 			next(error);

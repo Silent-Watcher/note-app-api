@@ -1,4 +1,4 @@
-import type { Types } from 'mongoose';
+import type { Types, UpdateResult } from 'mongoose';
 import { refreshTokenModel } from './auth.model';
 import type { RefreshToken, RefreshTokenDocument } from './auth.model';
 
@@ -14,6 +14,8 @@ export interface IRefreshTokenRepository {
 		refreshToken: string,
 		userId: Types.ObjectId,
 	): Promise<RefreshTokenDocument>;
+
+	invalidateMany(user: Types.ObjectId): Promise<UpdateResult>;
 }
 
 /**
@@ -36,14 +38,27 @@ const createRefreshTokenRepository = () => ({
 		refreshToken: string,
 		userId: Types.ObjectId,
 	): Promise<RefreshTokenDocument> {
-		console.log('userId: ', userId);
-		console.log('refreshToken: ', refreshToken);
 		const result = await refreshTokenModel.findOne({
 			user: userId,
 			hash: refreshToken,
 		});
-		console.log('result inside model: ', result);
 		return result as RefreshTokenDocument;
+	},
+
+	/**
+	 * Invalidates all refresh tokens belonging to the specified user by setting their status to "invalid".
+	 *
+	 * @param {Types.ObjectId} user - The ObjectId of the user whose refresh tokens should be invalidated.
+	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the updateMany operation.
+	 */
+	async invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
+		const result = await refreshTokenModel.updateMany(
+			{ user },
+			{
+				$set: { status: 'invalid' },
+			},
+		);
+		return result;
 	},
 });
 

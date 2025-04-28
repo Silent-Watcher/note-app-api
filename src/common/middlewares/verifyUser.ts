@@ -31,7 +31,6 @@ export function verifyUser(
 	next: NextFunction,
 ): void {
 	const authHeader = req.headers.authorization;
-	console.log('authHeader: ', authHeader);
 	if (!authHeader) {
 		res.sendError(httpStatus.UNAUTHORIZED, {
 			code: 'UNAUTHORIZED',
@@ -39,7 +38,6 @@ export function verifyUser(
 		});
 	}
 	const accessToken = authHeader?.split(' ')[1];
-	console.log('accessToken: ', accessToken);
 	if (!accessToken) {
 		res.sendError(httpStatus.BAD_REQUEST, {
 			code: 'BAD REQUEST',
