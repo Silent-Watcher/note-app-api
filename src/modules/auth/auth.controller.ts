@@ -8,7 +8,9 @@ const createAuthController = (service: IAuthService) => ({
 	async registerV1(req: Request, res: Response, next: NextFunction) {
 		try {
 			const createUserDto = req.body as CreateUserDto;
-			const newUser = (await service.register(createUserDto)).toObject();
+			const newUser = (
+				await service.registerV1(createUserDto)
+			).toObject();
 			const userObject = newUser;
 			res.sendSuccess(
 				httpStatus.CREATED,

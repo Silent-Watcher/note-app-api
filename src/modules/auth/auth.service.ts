@@ -12,14 +12,14 @@ import type { IAuthRepository } from './auth.repository';
 import { authRepository } from './auth.repository';
 
 export interface IAuthService {
-	register(createUserDto: CreateUserDto): Promise<Document>;
+	registerV1(createUserDto: CreateUserDto): Promise<Document>;
 }
 
 const createAuthService = (
 	repo: IAuthRepository,
 	userRepo: IUserRepository,
 ) => ({
-	async register(createUserDto: CreateUserDto) {
+	async registerV1(createUserDto: CreateUserDto) {
 		const { email, password } = createUserDto;
 		// check if the email is already in use
 		const emailTaken = await userRepo.findOneByEmail(email);
