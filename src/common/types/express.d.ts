@@ -1,10 +1,12 @@
 import type { HttpStatusCode } from '#app/common/helpers/httpstatus';
 import type { HttpErrorDetails } from '#app/common/utils/http.util';
+import type { UserDocument } from '#app/modules/users/user.model';
 import 'express-serve-static-core';
 
 declare module 'express-serve-static-core' {
 	interface Request {
 		apiVersion?: string;
+		user?: UserDocument;
 	}
 
 	interface Response {

@@ -1,9 +1,11 @@
+import type { Types } from 'mongoose';
 import type { CreateUserDto } from './dtos/create-user.dto';
 import { userModel } from './user.model';
 import type { UserDocument } from './user.model';
 
 export interface IUserRepository {
 	findOneByEmail(email: string): Promise<UserDocument>;
+	findById(id: Types.ObjectId): Promise<UserDocument>;
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
 	): Promise<UserDocument>;
@@ -15,6 +17,11 @@ const createUserRepository = () => ({
 			email,
 		})) as UserDocument;
 		return foundedUser;
+	},
+
+	async findById(id: Types.ObjectId): Promise<UserDocument> {
+		const foundedUser = await userModel.findById(id);
+		return foundedUser as UserDocument;
 	},
 
 	async create(
