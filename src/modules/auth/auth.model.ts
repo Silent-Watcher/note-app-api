@@ -1,15 +1,29 @@
 import dayjs from 'dayjs';
-import { Schema } from 'mongoose';
+import type { HydratedDocument, InferSchemaType } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
-export const otpSchema = new Schema(
+// Refresh Token Schema with rootIssuedAt for absolute expiry
+const refreshTokenSchema = new Schema(
 	{
-		email: { type: String, required: true, trim: true },
-		value: { type: String, required: true, trim: true },
+		user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
+		hash: { type: String, required: true, trim: true },
+		issuedAt: { type: Date, required: true, default: dayjs() },
 		expiresAt: {
 			type: Date,
 			required: true,
-			default: dayjs().add(2, 'minute'),
+			default: dayjs().add(1, 'day'),
 		},
+		revokedAt: { type: Date, required: false, default: undefined },
+		rootIssuedAt: { type: Date, required: true },
+		status: { type: String, enum: ['valid', 'invalid'], default: 'valid' },
 	},
-	{ timestamps: { updatedAt: false }, versionKey: false },
+	{ timestamps: false, versionKey: false },
+);
+
+export type RefreshToken = InferSchemaType<typeof refreshTokenSchema>;
+export type RefreshTokenDocument = HydratedDocument<RefreshToken>;
+
+export const refreshTokenModel = model<RefreshTokenDocument>(
+	'refresh_token',
+	refreshTokenSchema,
 );

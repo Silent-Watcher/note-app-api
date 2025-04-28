@@ -1,25 +1,25 @@
-import type { Document } from 'mongoose';
 import type { CreateUserDto } from './dtos/create-user.dto';
 import { userModel } from './user.model';
+import type { UserDocument } from './user.model';
 
 export interface IUserRepository {
-	findOneByEmail(email: string): Promise<Document | null>;
+	findOneByEmail(email: string): Promise<UserDocument>;
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
-	): Promise<Document>;
+	): Promise<UserDocument>;
 }
 
 const createUserRepository = () => ({
-	async findOneByEmail(email: string): Promise<Document | null> {
+	async findOneByEmail(email: string): Promise<UserDocument> {
 		const foundedUser = (await userModel.findOne({
 			email,
-		})) as Document | null;
+		})) as UserDocument;
 		return foundedUser;
 	},
 
 	async create(
-		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
-	): Promise<Document> {
+		createUserDto: Omit<CreateUserDto, 'confirmPassword'>,
+	): Promise<UserDocument> {
 		const newUser = await userModel.create({
 			email: createUserDto.email,
 			password: createUserDto.password,

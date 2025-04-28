@@ -1,11 +1,17 @@
-export interface IAuthRepository {
-	findOtpById(): void;
+import { refreshTokenModel } from './auth.model';
+import type { RefreshToken, RefreshTokenDocument } from './auth.model';
+
+export interface IRefreshTokenRepository {
+	create(
+		newRefreshToken: Partial<RefreshToken>,
+	): Promise<RefreshTokenDocument>;
 }
 
-const createAuthRepository = () => ({
-	findOtpById() {
-		console.log('finding otp from repo ...');
+const createRefreshTokenRepository = () => ({
+	async create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
+		const result = await refreshTokenModel.create(newRefreshToken);
+		return result;
 	},
 });
 
-export const authRepository = createAuthRepository();
+export const refreshTokenRepository = createRefreshTokenRepository();
