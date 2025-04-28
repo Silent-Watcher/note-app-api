@@ -33,5 +33,7 @@ export const CONFIG = Object.freeze({
 	SECRET: {
 		REFRESH_TOKEN: _env.REFRESH_TOKEN_SECRET,
 		ACCESS_TOKEN: _env.ACCESS_TOKEN_SECRET,
+		COOKIE: _env.COOKIE_SECRET,
 	},
+	MAX_SESSION_DAYS: 7,
 });

@@ -53,6 +53,13 @@ const zEnv = z.object({
 			/^[0-9a-f]{128}$/,
 			'ACCESS_TOKEN_SECRET must be a 128-character hexadecimal string',
 		),
+
+	COOKIE_SECRET: z
+		.string()
+		.regex(
+			/^[0-9a-f]{128}$/,
+			'COOKIE_SECRET must be a 128-character hexadecimal string',
+		),
 });
 
 /**

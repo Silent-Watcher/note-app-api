@@ -1,3 +1,4 @@
+import cookieParser from 'cookie-parser';
 import type { Request, Response } from 'express';
 import express from 'express';
 import { router as apiRouter } from '#app/api/';
@@ -5,6 +6,7 @@ import { httpStatus } from '#app/common/helpers/httpstatus';
 import { configureErrorHandler } from '#app/common/middlewares/errorHandler';
 import { extractVersion } from '#app/common/middlewares/extractVersion';
 import { responseMiddleware } from '#app/common/middlewares/response';
+import { CONFIG } from '#app/config';
 
 export const app = express();
 
@@ -13,6 +15,11 @@ export const app = express();
  * Must be registered before any route handlers that rely on `req.body`.
  */
 app.use(express.json(), express.urlencoded({ extended: false }));
+
+/**
+ * Parses incoming request cookies and populates `req.cookies`.
+ */
+app.use(cookieParser(CONFIG.SECRET.COOKIE));
 
 /**
  * Middleware to extract the API version from the incoming request.

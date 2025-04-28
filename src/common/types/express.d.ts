@@ -4,11 +4,29 @@ import type { UserDocument } from '#app/modules/users/user.model';
 import 'express-serve-static-core';
 
 declare module 'express-serve-static-core' {
+	/**
+	 * Extend the Express `Request` object to include additional properties.
+	 */
 	interface Request {
+		/**
+		 * Optional API version header for versioning the API.
+		 *
+		 * This field can be used to determine which version of the API the request is targeting.
+		 */
 		apiVersion?: string;
+
+		/**
+		 * The authenticated user document.
+		 *
+		 * This property holds the `UserDocument` associated with the current authenticated user, typically set after
+		 * the user has been validated via a token or session.
+		 */
 		user?: UserDocument;
 	}
 
+	/**
+	 * Extend the Express `Response` object to include helper methods for sending standardized responses.
+	 */
 	interface Response {
 		/**
 		 * Send a standardized success payload.

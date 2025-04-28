@@ -4,14 +4,34 @@ import { httpStatus } from '#app/common/helpers/httpstatus';
 import type { DecodedToken } from '#app/common/helpers/jwt';
 import { covertToObjectId } from '#app/common/helpers/mongo';
 import { CONFIG } from '#app/config';
+import type { UserDocument } from '#app/modules/users/user.model';
 import { userService } from '#app/modules/users/user.service';
 
+/**
+ * Middleware to verify the user based on the JWT access token.
+ *
+ * This function checks the Authorization header for a valid JWT token, verifies it, and retrieves the associated
+ * user document from the database. If successful, the user document is attached to the `req.user` property for use in
+ * subsequent middleware or route handlers. If any errors occur (e.g., missing or invalid token), an appropriate error
+ * response is sent.
+ *
+ * @param req - The Express request object.
+ * @param res - The Express response object.
+ * @param next - The callback function to pass control to the next middleware.
+ *
+ * @returns void - The function doesn't return a value; instead, it either calls `next()` to proceed or sends an error response.
+ *
+ * @throws Sends a standardized error response with:
+ *   - HTTP status `401 Unauthorized` for missing or invalid authorization headers.
+ *   - HTTP status `400 Bad Request` for invalid tokens.
+ */
 export function verifyUser(
 	req: Request,
 	res: Response,
 	next: NextFunction,
 ): void {
 	const authHeader = req.headers.authorization;
+	console.log('authHeader: ', authHeader);
 	if (!authHeader) {
 		res.sendError(httpStatus.UNAUTHORIZED, {
 			code: 'UNAUTHORIZED',
@@ -19,6 +39,7 @@ export function verifyUser(
 		});
 	}
 	const accessToken = authHeader?.split(' ')[1];
+	console.log('accessToken: ', accessToken);
 	if (!accessToken) {
 		res.sendError(httpStatus.BAD_REQUEST, {
 			code: 'BAD REQUEST',
@@ -35,9 +56,10 @@ export function verifyUser(
 					message: 'invalid token',
 				});
 			} else {
-				req.user = await userService.findById(
+				const user = await userService.findById(
 					covertToObjectId((decoded as DecodedToken).userId),
 				);
+				req.user = user.toObject() as UserDocument;
 				next();
 			}
 		},

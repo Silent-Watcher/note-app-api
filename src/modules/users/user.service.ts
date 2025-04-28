@@ -7,6 +7,9 @@ import {
 import type { Types } from 'mongoose';
 import type { UserDocument } from './user.model';
 
+/**
+ * Interface defining the user service methods.
+ */
 export interface IUserService {
 	findById(id: Types.ObjectId): Promise<UserDocument>;
 	findOneByEmail(email: string): Promise<UserDocument>;
@@ -15,6 +18,14 @@ export interface IUserService {
 	): Promise<UserDocument>;
 }
 
+/**
+ * Factory function to create a user service instance.
+ *
+ * The service layer interacts with the repository and provides
+ * abstraction for user-related operations such as finding and creating users.
+ *
+ * @param {IUserRepository} repo - The repository instance to interact with the database.
+ */
 const createUserService = (repo: IUserRepository) => ({
 	findById(id: Types.ObjectId): Promise<UserDocument> {
 		return repo.findById(id);
@@ -29,4 +40,7 @@ const createUserService = (repo: IUserRepository) => ({
 	},
 });
 
+/**
+ * Singleton instance of the user service.
+ */
 export const userService = createUserService(userRepository);

@@ -16,7 +16,14 @@ const userSchema = new Schema(
 
 export const userModel = model('user', userSchema);
 
-// the “plain” schema type
+/**
+ * Type representing the plain User schema structure
+ * (without any Mongoose document methods or fields like `_id`).
+ */
 export type User = InferSchemaType<typeof userSchema>;
-// add Mongoose’s Document stuff (_id, save(), etc):
+
+/**
+ * Type representing a full Mongoose User document,
+ * including Mongoose-specific fields and methods (like `_id`, `save()`, etc).
+ */
 export type UserDocument = HydratedDocument<User>;
