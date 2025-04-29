@@ -41,7 +41,7 @@ export function verifyUser(
 	if (!accessToken) {
 		res.sendError(httpStatus.BAD_REQUEST, {
 			code: 'BAD REQUEST',
-			message: 'invalid token',
+			message: 'please login',
 		});
 	}
 	jwt.verify(
@@ -51,7 +51,7 @@ export function verifyUser(
 			if (err) {
 				res.sendError(httpStatus.BAD_REQUEST, {
 					code: 'BAD REQUEST',
-					message: 'invalid token',
+					message: 'please login',
 				});
 			} else {
 				const user = await userService.findById(

@@ -102,6 +102,17 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
+	/**
+	 * Logs out the currently authenticated user by:
+	 * - Invalidating all tokens associated with the user's ID.
+	 * - Clearing the user's session from the request.
+	 * - Removing the refresh token cookie.
+	 * - Sending a success response to the client.
+	 *
+	 * @param {Request} req - Express request object, with `user` containing the authenticated user's info.
+	 * @param {Response} res - Express response object used to send back the HTTP response.
+	 * @param {NextFunction} next - Express next middleware function to pass errors if they occur.
+	 */
 	async logoutV1(req: Request, res: Response, next: NextFunction) {
 		try {
 			await service.invalidateAllTokens(req.user?._id as Types.ObjectId);
