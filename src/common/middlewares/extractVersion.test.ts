@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import { app } from '#app/core/app';
-import { httpStatus } from '../helpers/httpstatus.helper';
+import { httpStatus } from '../helpers/httpstatus';
 
 describe('extractVersion middleware', () => {
 	const defaultVersion = '1';

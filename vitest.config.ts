@@ -12,6 +12,7 @@ export default defineConfig({
 			include: ['src/**/*.ts'],
 		},
 		environment: 'node',
+		setupFiles: './tests/setup-env.ts', // setup file to prepare env
 	},
 	resolve: {
 		alias: {

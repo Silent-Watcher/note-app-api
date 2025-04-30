@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response, Router } from 'express';
 import routerV1 from '#app/api/versions/v1';
-import routerV2 from '#app/api/versions/v2';
 
 /**
  * Loads the appropriate router based on the API version specified in the request.
@@ -19,7 +18,6 @@ import routerV2 from '#app/api/versions/v2';
 export function loadRouter(router: Router) {
 	const versions: Record<string, Router> = {
 		'1': routerV1,
-		'2': routerV2,
 	};
 	return (req: Request, res: Response, next: NextFunction) => {
 		const v = (req.apiVersion as string) ?? '1';
