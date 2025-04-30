@@ -15,7 +15,6 @@ import { app } from './app';
  * If not provided, it defaults to the `APP_PORT` environment variable.
  *
  * @returns {void}
- *
  */
 export function runServer(port: string = String(CONFIG.APP.PORT)): void {
 	const server = createServer(app);
