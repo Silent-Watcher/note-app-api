@@ -1,49 +1,24 @@
-import path from 'node:path';
-import cookieParser from 'cookie-parser';
 import express from 'express';
 import { router as apiRouter } from '#app/api/';
 import { configureErrorHandler } from '#app/common/middlewares/errorHandler';
-import { extractVersion } from '#app/common/middlewares/extractVersion';
-import { responseMiddleware } from '#app/common/middlewares/response';
-import { CONFIG } from '#app/config';
+import { configureMiddleware } from '#app/config/middleware';
 
 export const app = express();
 
 /**
- * Built-in middleware to parse incoming request bodies.
- * Must be registered before any route handlers that rely on `req.body`.
- */
-app.use(express.json(), express.urlencoded({ extended: false }));
-
-app.set('view engine', 'ejs');
-app.set('views', path.join(process.cwd(), 'src', 'resources'));
-app.use(express.static(path.join(process.cwd(), 'public')));
-
-/**
- * Parses incoming request cookies and populates `req.cookies`.
- */
-app.use(cookieParser(CONFIG.SECRET.COOKIE));
-
-/**
- * Middleware to extract the API version from the incoming request.
+ * Apply all global middleware, view engine setup, and static file serving
+ * configurations to the given Express application instance.
  *
- * This allows versioning routes by reading version information from:
- * - Headers
+ * This function centralizes:
+ *  - Body parsers (`express.json()`, `express.urlencoded`)
+ *  - View engine (`ejs`) and views directory
+ *  - Static assets directory
+ *  - Any additional application-wide middleware (CORS, helmet, sessions, etc.)
  *
- * Must be used early, before defining any versioned routes.
+ * @param {import('express').Express} app - The Express application to configure.
+ * @returns {void}
  */
-app.use(extractVersion());
-
-/**
- * Middleware to extend the Response object with custom helpers.
- *
- * It adds:
- * - `res.sendSuccess(data, message, meta, statusCode)`
- * - `res.sendError(statusCode, error)`
- *
- * This ensures a consistent structure for both success and error responses.
- */
-app.use(responseMiddleware);
+configureMiddleware(app);
 
 /**
  * GET /
@@ -63,4 +38,15 @@ app.get('/', (req, res, next) => {
  */
 app.use('/api', apiRouter);
 
+/**
+ * Attach global error handling middleware to the given Express application.
+ *
+ * This function sets up:
+ *  - A 404 Not Found handler for unmatched routes
+ *  - A centralized error handler to format and respond to thrown errors
+ *  - Any additional error-logging or reporting middleware
+ *
+ * @param {import("express").Application} app - The Express application instance to configure error handling on.
+ * @returns {void}
+ */
 configureErrorHandler(app);
