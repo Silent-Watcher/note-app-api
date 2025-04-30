@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AI-Note-App-API</title>
+	<link rel="stylesheet" href="/styles/index.css">
+</head>
+<body>
+	<header>
+		<h1>Welcome to AI-Note-App-API</h1>
+		<h3>version : <%= apiVersion %></h3>
+
+		<p>A powerful and lightweight RESTful API for a smart note-taking application that leverages AI to help users capture, organize, and search their notes more effectively.</p>
+	</header>
+	<main>
+		<section id="swagger-docs" class="box">
+		    <img
+        src="/imgs/swagger_logo.svg"
+        alt="Swagger Logo"
+        class="logo"
+      />
+      <br />
+      <button
+        class="button swagger-button"
+        onclick="window.location.href='/api/docs'"
+      >
+        Go to Swagger Docs
+      </button>
+		</section>
+		<section id="graphql-docs" class="box">
+			<img
+			src="/imgs/GraphQL_Logo.svg"
+			alt="GraphQL Logo"
+			class="logo"
+		  />
+		  <br />
+		  <button
+			class="button graphql-button"
+			onclick="window.location.href='/graphql'"
+		  >
+			Go to GraphQL UI
+		  </button>
+		</section>
+	</main>
+</body>
+</html>

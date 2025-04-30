@@ -1,0 +1,69 @@
+*,*::after,*::before{
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+body{
+	font-family: monospace;
+	text-align: center;
+	max-width: 70%;
+	margin: 0 auto;
+}
+
+header{
+	margin-top: 2rem;
+}
+
+header h3 {
+	margin: 1rem 0;
+}
+
+main{
+	margin-top: 2rem;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.box {
+	background-color: #fff;
+	border-radius: 12px;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+	padding: 20px 30px;
+	text-align: center;
+	width: 300px;
+  }
+
+  .logo {
+	width: 100px;
+	margin-bottom: 20px;
+  }
+
+  .button {
+	padding: 10px 20px;
+	font-size: 16px;
+	border-radius: 6px;
+	cursor: pointer;
+	border: none;
+	transition: background-color 0.3s ease;
+  }
+
+  .swagger-button {
+	background-color: #85ea2d;
+	color: black;
+  }
+
+  .swagger-button:hover {
+	background-color: #6cc024;
+  }
+
+  .graphql-button {
+	background-color: #e535ab;
+	color: white;
+  }
+
+  .graphql-button:hover {
+	background-color: #c02695;
+  }

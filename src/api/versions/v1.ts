@@ -9,6 +9,10 @@ const router = Router();
 
 configSwaggerV1(router);
 
+router.get('/', (req, res, next) => {
+	res.render('index', { apiVersion: req.apiVersion });
+});
+
 router.use('/auth', authRouterV1);
 
 router.get('/superman', verifyUser, (req, res, next) => {
