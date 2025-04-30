@@ -46,6 +46,16 @@ app.use(extractVersion());
 app.use(responseMiddleware);
 
 /**
+ * GET /
+ * Redirects the root route to /api.
+ *
+ * @route GET /
+ */
+app.get('/', (req, res, next) => {
+	res.redirect('/api');
+});
+
+/**
  * Mount the main API router.
  *
  * This router handles all API endpoints, typically grouped by version and feature.
