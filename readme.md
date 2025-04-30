@@ -1,5 +1,7 @@
 # AI-Note-APP-API
 
+A powerful and lightweight RESTful API for a smart note-taking application that leverages AI to help users capture, organize, and search their notes more effectively.
+
 ## Tools & Tech ⛏
 
 ![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
@@ -281,3 +283,35 @@ sequenceDiagram
   FE->>BE: GET /profile (with new token)
   BE-->>FE: 200 {userProfile}
 ```
+
+## Environment Variables
+
+To run this project, you will need to add the following environment variables to your .env file
+
+`NODE_ENV`
+`APP_ENV`
+`APP_PORT`
+`MONGO_USERNAME`
+`MONGO_PASSWORD`
+`MONGO_HOST`
+`MONGO_PORT`
+`LOG_LEVEL`
+`ACCESS_TOKEN_SECRET`
+`REFRESH_TOKEN_SECRET`
+`COOKIE_SECRET`
+
+## Running Tests
+
+To run tests, run the following command
+
+```bash
+  npm run test
+```
+
+## Support
+
+For support, email <attedev6@gmail.com>.
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
