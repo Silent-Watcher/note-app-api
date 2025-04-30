@@ -10,6 +10,134 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-%234ea94b.svg?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Vitest](https://img.shields.io/badge/-Vitest-252529?style=for-the-badge&logo=vitest&logoColor=FCC72B)
 
+## API Versioning
+
+Our API uses header-based versioning via the `Accept` HTTP header. Clients **must** include the following header on every request:
+
+```http
+Accept: application/vnd.myapp.v{version}+json
+```
+
+- If the `Accept` header is **omitted**, the API **defaults to version 1**.
+- **Currently, only version 1 is available.**
+
+---
+
+## API Reference
+
+Use this document to quickly look up each endpoint, its headers, request body, response schema, status codes, and whether it’s protected or public.
+
+---
+
+### Authentication
+
+#### POST `/auth/register`
+
+**Tag:** Public
+
+**Headers:**
+
+```http
+Accept: application/vnd.myapp.v1+json
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "string",
+  "confirmPassword": "string"
+}
+```
+
+> Password must be at least 8 characters long
+
+**Responses:**
+
+| Status | Description
+|--------|-------------------------------
+| 201    | Created successfully
+| 400    | Validation error
+| 403    | Forbidden error
+
+> you recieve 403 in cases where you already loggedIn
+---
+
+#### POST `/auth/login`
+
+**Tag:** Public
+
+**Headers:**
+
+```http
+Accept: application/vnd.myapp.v1+json
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "string"
+}
+```
+
+**Responses:**
+
+| Status | Description
+|--------|-------------------------------
+| 201    | Created successfully
+| 400    | Validation error
+| 403    | Forbidden error
+
+> you recieve 403 in cases where you already loggedIn
+
+---
+
+#### GET `/auth/logout`
+
+**Tag:** Protected
+
+**Headers:**
+
+```http
+Accept: application/vnd.myapp.v1+json
+```
+
+**Responses:**
+
+| Status | Description
+|--------|-------------------------------
+| 200    | OK
+| 403    | Forbidden error
+
+> you recieve 403 in cases where you don't have any active session and valid access token
+
+---
+
+#### POST `/auth/refresh`
+
+**Tag:** Public
+
+**Headers:**
+
+```http
+Accept: application/vnd.myapp.v1+json
+```
+
+**Responses:**
+
+| Status | Description
+|--------|-------------------------------
+| 201    | Created successfully
+
+> The cookie that contains the refresh token is sent automatically when you hit this endpoint
+
+---
+
 ## Authentication Flow & Error Handling Guide for Frontend
 
 This guide outlines how our backend and frontend coordinate for JWT-based authentication, covering public vs. protected routes, token management, middleware logic, frontend integration, and a sequence diagram.
@@ -34,8 +162,9 @@ This guide outlines how our backend and frontend coordinate for JWT-based authen
 | Token Type     | Lifetime      | Storage              | Sent via                              |
 |----------------|---------------|----------------------|---------------------------------------|
 | **Access Token**  | Short (e.g. 5m) | in-memory | `Authorization: Bearer <accessToken>` header |
-| **Refresh Token** | Long (e.g. 7d) | HTTP-only, Secure **cookie** scoped to `/auth/refresh` | Browser sends cookie automatically on `/auth/refresh` |
+| **Refresh Token** | Long (e.g. 1d) | HTTP-only, Secure **cookie** scoped to `/auth/refresh` | Browser sends cookie automatically on `/auth/refresh` |
 
+> **Total session time:** A user’s session (via rolling refreshes) can remain active for up to **7 days** before they must fully re-authenticate.
 > **Security Note:** Refresh tokens are never exposed to JavaScript. Access tokens are kept minimal and short-lived.
 
 ---
@@ -47,10 +176,10 @@ Applied on public routes (`/login`, `/register`) to prevent already-authenticate
 1. **Check for `Authorization` header**:
    - No header → `next()` (allow).
 2. **Verify `accessToken`**:
-   - **Valid** → respond `403 Forbidden` with `{ code: "FORBIDDEN", message: "Authenticated users cannot access this endpoint." }`.
+   - **Valid** → respond `403 Forbidden` with `{ code: "FORBIDDEN", message: "Authenticated users cannot access the login or register endpoints." }`.
    - **Expired or invalid** → `next()` (treat as unauthenticated).
 
-> **Frontend Note:** Before each request, the front end should avoid attaching an expired or invalid access token. If it’s expired, trigger the refresh flow instead of sending it to the server.
+> **Frontend Note:** Before each request, the front end should avoid attaching an expired or invalid access token**. If it’s expired, trigger the refresh flow instead of sending it to the server.
 
 This ensures only valid active sessions are blocked, while expired tokens let users re-login or register.
 
@@ -81,9 +210,9 @@ api.interceptors.request.use(config => {
 export default api;
 ```
 
-#### 4.2 Handling `401 Unauthorized`
+#### 4.2 Handling `403 Unauthorized`
 
-On any 401 response from a protected endpoint, attempt a token refresh before redirecting to login:
+On any 403 response from a protected endpoint, attempt a token refresh before redirecting to login:
 
 ```js
 api.interceptors.response.use(
@@ -91,7 +220,7 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 403 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
         const { data } = await api.post('/auth/refresh');
