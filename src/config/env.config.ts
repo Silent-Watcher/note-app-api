@@ -23,6 +23,8 @@ const zEnv = z.object({
 		.min(1, { message: 'APP_PORT must be ≥ 1' })
 		.max(65535, { message: 'APP_PORT must be ≤ 65535' }),
 
+	APP_HOST: z.string().nonempty('APP_HOST must be set'),
+
 	MONGO_USERNAME: z
 		.string()
 		.nonempty({ message: 'MONGO_USERNAME is required' }),
@@ -75,7 +77,9 @@ const zEnvValidationResult = zEnv.safeParse(process.env);
 
 if (!zEnvValidationResult.success) {
 	logger.error(
-		`there is an error with env variables!: ${fromZodError(zEnvValidationResult.error).message}`,
+		`there is an error with env variables!: ${
+			fromZodError(zEnvValidationResult.error).message
+		}`,
 	);
 	process.exit(1);
 }
