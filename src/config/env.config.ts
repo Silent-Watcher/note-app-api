@@ -40,6 +40,26 @@ const zEnv = z.object({
 		required_error: 'LOG_LEVEL is required',
 		invalid_type_error: `LOG_LEVEL must be one of ${logLevels.join('/')}`,
 	}),
+
+	REFRESH_TOKEN_SECRET: z
+		.string()
+		.regex(
+			/^[0-9a-f]{128}$/,
+			'REFRESH_TOKEN_SECRET must be a 128-character hexadecimal string',
+		),
+	ACCESS_TOKEN_SECRET: z
+		.string()
+		.regex(
+			/^[0-9a-f]{128}$/,
+			'ACCESS_TOKEN_SECRET must be a 128-character hexadecimal string',
+		),
+
+	COOKIE_SECRET: z
+		.string()
+		.regex(
+			/^[0-9a-f]{128}$/,
+			'COOKIE_SECRET must be a 128-character hexadecimal string',
+		),
 });
 
 /**

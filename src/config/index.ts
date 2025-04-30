@@ -18,7 +18,7 @@ import { _env } from './env.config';
  * @property {string} LOGGER.LEVEL         - Minimum log level for the logger.
  */
 export const CONFIG = Object.freeze({
-	DEBUG: _env.APP_ENV,
+	DEBUG: _env.APP_ENV === 'development',
 	APP: Object.freeze({
 		PORT: _env.APP_PORT,
 	}),
@@ -30,7 +30,10 @@ export const CONFIG = Object.freeze({
 			PASSWORD: _env.MONGO_PASSWORD,
 		}),
 	}),
-	LOGGER: Object.freeze({
-		LEVEL: _env.LOG_LEVEL,
-	}),
+	SECRET: {
+		REFRESH_TOKEN: _env.REFRESH_TOKEN_SECRET,
+		ACCESS_TOKEN: _env.ACCESS_TOKEN_SECRET,
+		COOKIE: _env.COOKIE_SECRET,
+	},
+	MAX_SESSION_DAYS: 7,
 });
