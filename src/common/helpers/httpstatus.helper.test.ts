@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { httpStatus } from './httpstatus.helper';
+import { httpStatus } from './httpstatus';
 
 describe('httpStatus helper', () => {
 	it('should return 200 for OK', () => {

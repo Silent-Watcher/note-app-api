@@ -23,7 +23,7 @@
         "prepare": "husky",
         "commit": "cz",
         "clean": "del-cli dist/ coverage/ *.log",
-        "validate:branch": "validate-branch",
+        "validate:branch": "npx validate-branch",
         "docker:dev": "docker compose -f .docker/docker-compose.dev.yml up --build"
     },
     "devDependencies": {
@@ -43,7 +43,7 @@
         "tsup": "^8.4.0",
         "tsx": "^4.19.3",
         "typescript": "^5.8.2",
-        "validate-branch": "^1.1.6",
+        "validate-branch": "^1.2.7",
         "vitest": "^3.1.2"
     },
     "config": {
