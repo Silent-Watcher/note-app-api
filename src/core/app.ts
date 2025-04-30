@@ -6,6 +6,7 @@ import { httpStatus } from '#app/common/helpers/httpstatus';
 import { configureErrorHandler } from '#app/common/middlewares/errorHandler';
 import { extractVersion } from '#app/common/middlewares/extractVersion';
 import { responseMiddleware } from '#app/common/middlewares/response';
+import { configSwaggerV1 } from '#app/common/utils/swagger/swagger.util';
 import { CONFIG } from '#app/config';
 
 export const app = express();
@@ -48,16 +49,6 @@ app.use(responseMiddleware);
  * This router handles all API endpoints, typically grouped by version and feature.
  * Should be mounted after global middlewares (like extractVersion and responseMiddleware).
  */
-app.use(apiRouter);
-
-/**
- * Health check endpoint.
- *
- * Responds with a 200 OK status to indicate that the server is running and healthy.
- * This can be used for monitoring or load balancer health checks.
- */
-app.get('/health', (req: Request, res: Response) => {
-	res.sendSuccess(httpStatus.OK, {}, 'server is up ...');
-});
+app.use('/api', apiRouter);
 
 configureErrorHandler(app);

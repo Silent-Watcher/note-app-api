@@ -1,0 +1,19 @@
+paths:
+    /health:
+        get:
+            tags:
+              - Health
+            summary: Health check of the API
+            responses:
+                "200":
+                   description:
+                   content:
+                      application/json:
+                            schema:
+                                $ref: "#/components/schemas/SuccessResponse"
+                            example:
+                                code: 200
+                                message: 'server is up ...'
+                                data: {}
+                                meta: {}
+                                version: 1

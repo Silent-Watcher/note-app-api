@@ -1,0 +1,42 @@
+tags:
+  - name: Health
+    description: Endpoints related to health checking
+
+components:
+  schemas:
+    SuccessResponse:
+        type: object
+        required:
+          - code
+          - message
+        properties:
+            code:
+               type: integer
+               format: int32
+               example: 200
+            message:
+               type: string
+               example: "ok"
+            data:
+              oneOf:
+                - type: object
+                  description: any JSON object
+                  additionalProperties: true
+                - type: array
+                  description: any JSON array
+                  items: {}
+                - type: string
+                - type: number
+                - type: boolean
+                - type: "null"
+              description: |
+                A free-form field that may be an object, array, string, number, boolean or null.
+            meta:
+               type: object
+               additionalProperties: true
+               description: |
+                  A JSON object with arbitrary properties.
+            version:
+               type: string
+               example: '1'
+
