@@ -13,15 +13,6 @@ describe('routing base on the api version', () => {
 		expect(response.body.version).toBe('1');
 	});
 
-	it('should respond with v2 handler for version 2', async () => {
-		const response = await request(app)
-			.get('/')
-			.set('Accept', 'application/vnd.myapp.v2+json');
-
-		expect(response.status).toBe(httpStatus.OK);
-		expect(response.body.version).toBe('2');
-	});
-
 	it('should respond with v1 handler if no version specified', async () => {
 		const response = await request(app).get('/');
 

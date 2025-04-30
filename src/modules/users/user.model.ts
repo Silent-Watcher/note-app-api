@@ -14,8 +14,6 @@ const userSchema = new Schema(
 	{ versionKey: false },
 );
 
-export const userModel = model('user', userSchema);
-
 /**
  * Type representing the plain User schema structure
  * (without any Mongoose document methods or fields like `_id`).
@@ -27,3 +25,5 @@ export type User = InferSchemaType<typeof userSchema>;
  * including Mongoose-specific fields and methods (like `_id`, `save()`, etc).
  */
 export type UserDocument = HydratedDocument<User>;
+
+export const userModel = model<UserDocument>('user', userSchema);

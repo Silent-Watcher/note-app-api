@@ -18,7 +18,7 @@ import { _env } from './env.config';
  * @property {string} LOGGER.LEVEL         - Minimum log level for the logger.
  */
 export const CONFIG = Object.freeze({
-	DEBUG: _env.APP_ENV,
+	DEBUG: _env.APP_ENV === 'development',
 	APP: Object.freeze({
 		PORT: _env.APP_PORT,
 	}),

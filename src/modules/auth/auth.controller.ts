@@ -4,6 +4,7 @@ import { httpStatus } from '#app/common/helpers/httpstatus';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import type { IAuthService } from './auth.service';
 import { authService } from './auth.service';
+import type { LoginUserDto } from './dtos/login-user.dto';
 
 const createAuthController = (service: IAuthService) => ({
 	/**
@@ -20,7 +21,11 @@ const createAuthController = (service: IAuthService) => ({
 	 *
 	 * @returns {Promise<void>}
 	 */
-	async registerV1(req: Request, res: Response, next: NextFunction) {
+	async registerV1(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
 		try {
 			const createUserDto = req.body as CreateUserDto;
 			const { newUser, accessToken, refreshToken } =
@@ -34,6 +39,8 @@ const createAuthController = (service: IAuthService) => ({
 				path: '/auth/refresh',
 			});
 
+			req.user = newUser;
+
 			res.sendSuccess(
 				httpStatus.CREATED,
 				{
@@ -42,6 +49,7 @@ const createAuthController = (service: IAuthService) => ({
 				},
 				'user registered successfully',
 			);
+			return;
 		} catch (error) {
 			next(error);
 		}
@@ -61,21 +69,19 @@ const createAuthController = (service: IAuthService) => ({
 	 * @param {NextFunction} next - Express next middleware function for error handling.
 	 * @returns {Promise<void>}
 	 */
-	async refreshTokensV1(req: Request, res: Response, next: NextFunction) {
+	async refreshTokensV1(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
 		try {
-			if (!req.user) {
-				res.sendError(httpStatus.UNAUTHORIZED, {
-					code: 'UNAUTHORIZED',
-					message: 'please login',
-				});
-			}
-
 			const refreshToken = req.cookies.refresh_token;
 			if (!refreshToken) {
 				res.sendError(httpStatus.UNAUTHORIZED, {
 					code: 'UNAUTHORIZED',
 					message: 'refresh token not found',
 				});
+				return;
 			}
 
 			const {
@@ -97,6 +103,7 @@ const createAuthController = (service: IAuthService) => ({
 				},
 				'token refreshed successfully',
 			);
+			return;
 		} catch (error) {
 			next(error);
 		}
@@ -113,7 +120,11 @@ const createAuthController = (service: IAuthService) => ({
 	 * @param {Response} res - Express response object used to send back the HTTP response.
 	 * @param {NextFunction} next - Express next middleware function to pass errors if they occur.
 	 */
-	async logoutV1(req: Request, res: Response, next: NextFunction) {
+	async logoutV1(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
 		try {
 			await service.invalidateAllTokens(req.user?._id as Types.ObjectId);
 			req.user = undefined;
@@ -123,6 +134,37 @@ const createAuthController = (service: IAuthService) => ({
 				{},
 				'You have been logged out. please invalidate the access token !',
 			);
+			return;
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async loginV1(req: Request, res: Response, next: NextFunction) {
+		try {
+			const loginUserDto = req.body as LoginUserDto;
+			const { user, accessToken, refreshToken } =
+				await service.loginV1(loginUserDto);
+			const userObject = user.toObject();
+
+			res.cookie('refresh_token', refreshToken, {
+				httpOnly: true,
+				sameSite: 'strict',
+				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+				path: '/auth/refresh',
+			});
+
+			req.user = user;
+
+			res.sendSuccess(
+				httpStatus.CREATED,
+				{
+					accessToken,
+					user: { _id: userObject._id, email: userObject.email },
+				},
+				'Login successful.',
+			);
+			return;
 		} catch (error) {
 			next(error);
 		}

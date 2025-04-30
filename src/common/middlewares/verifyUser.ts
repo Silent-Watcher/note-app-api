@@ -32,34 +32,58 @@ export function verifyUser(
 ): void {
 	const authHeader = req.headers.authorization;
 	if (!authHeader) {
-		res.sendError(httpStatus.UNAUTHORIZED, {
-			code: 'UNAUTHORIZED',
-			message: 'header not found',
+		res.sendError(httpStatus.FORBIDDEN, {
+			code: 'FORBIDDEN',
+			message: 'authorization header not found',
 		});
+		return;
 	}
 	const accessToken = authHeader?.split(' ')[1];
+
 	if (!accessToken) {
-		res.sendError(httpStatus.BAD_REQUEST, {
-			code: 'BAD REQUEST',
-			message: 'please login',
+		res.sendError(httpStatus.FORBIDDEN, {
+			code: 'FORBIDDEN',
+			message: 'access token not found!',
 		});
+		return;
 	}
+
+	// In development mode (e.g., when testing via Postman), if the placeholder access token "{{access_token}}"
+	// is sent instead of a real token, block the request with a 403 Forbidden error.
+	if (CONFIG.DEBUG && accessToken === '{{access_token}}') {
+		res.sendError(httpStatus.FORBIDDEN, {
+			code: 'FORBIDDEN',
+			message: 'access token not found!',
+		});
+		return;
+	}
+
 	jwt.verify(
 		accessToken as string,
 		CONFIG.SECRET.ACCESS_TOKEN,
 		async (err, decoded) => {
-			if (err) {
-				res.sendError(httpStatus.BAD_REQUEST, {
-					code: 'BAD REQUEST',
-					message: 'please login',
+			if (err instanceof jwt.TokenExpiredError) {
+				res.sendError(httpStatus.UNAUTHORIZED, {
+					code: 'UNAUTHORIZED',
+					message:
+						'your token expired refresh it or login if your session expired!',
 				});
-			} else {
-				const user = await userService.findById(
-					covertToObjectId((decoded as DecodedToken).userId),
-				);
-				req.user = user.toObject() as UserDocument;
-				next();
+				return;
 			}
+
+			if (err instanceof jwt.JsonWebTokenError) {
+				res.sendError(httpStatus.FORBIDDEN, {
+					code: 'FORBIDDEN',
+					message: 'invalid token!',
+				});
+				return;
+			}
+
+			const user = await userService.findById(
+				covertToObjectId((decoded as DecodedToken).userId),
+			);
+			req.user = user.toObject() as UserDocument;
+			next();
 		},
 	);
 }
