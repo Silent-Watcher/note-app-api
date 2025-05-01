@@ -42,3 +42,156 @@ paths:
                                     code: "BAD REQUEST"
                                     message: "email is already in use"
                                 version: 1
+                "403":
+                    description: Authenticated users cannot access the login or register endpoints.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                error:
+                                    code: "FORBIDDEN"
+                                    message: "Authenticated users cannot access the login or register endpoints."
+                                version: 1
+    /auth/login:
+        post:
+            tags:
+              - Authentication
+            summary: User login
+            description: Authenticates a user with email and password. Returns an access token and user information on success.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserLoginRequest'
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UserLoginRequest'
+            responses:
+                "201":
+                    description: user login succesfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SuccessResponse"
+                            example:
+                                code: 201
+                                message: 'Login successful.'
+                                data:
+                                    user:
+                                       _id: "12345"
+                                       email: "JohnDoe@gmail.com"
+                                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                meta: {}
+                                version: 1
+                "400":
+                    description: No account found for the provided email address.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 400
+                                error:
+                                    code: "BAD REQUEST"
+                                    message: "No account found for the provided email address."
+                                version: 1
+                "403":
+                    description: Authenticated users cannot access the login or register endpoints.
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                error:
+                                    code: "FORBIDDEN"
+                                    message: "Authenticated users cannot access the login or register endpoints."
+                                version: 1
+    /auth/logout:
+        get:
+            tags:
+              - Authentication
+            summary: User logout
+            responses:
+                "200":
+                    description: user logout succesfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SuccessResponse"
+                            example:
+                                code: 200
+                                message: 'You have been logged out. please invalidate the access token !'
+                                data: {}
+                                meta: {}
+                                version: 1
+                "401":
+                    description: your token expired refresh it or login if your session expired!
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                error:
+                                    code: "UNAUTHORIZED"
+                                    message: "your token expired refresh it or login if your session expired!"
+                                version: 1
+                "403":
+                    description: invalid token!
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                error:
+                                    code: "FORBIDDEN"
+                                    message: "invalid token!"
+                                version: 1
+    /auth/refresh:
+        post:
+            tags:
+              - Authentication
+            summary: User logout
+            responses:
+                "201":
+                    description: token refreshed successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SuccessResponse"
+                            example:
+                                code: 201
+                                message: 'token refreshed successfully'
+                                data:
+                                    accessToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                                meta: {}
+                                version: 1
+                "401":
+                    description: refresh token not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 401
+                                error:
+                                    code: "UNAUTHORIZED"
+                                    message: "refresh token not found"
+                                version: 1
+                "403":
+                    description: invalid token!
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 403
+                                error:
+                                    code: "FORBIDDEN"
+                                    message: "invalid token!"
+                                version: 1

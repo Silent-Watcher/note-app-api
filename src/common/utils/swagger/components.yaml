@@ -85,3 +85,17 @@ components:
             - email
             - password
             - confirmPassword
+    UserLoginRequest:
+        type: object
+        properties:
+            email:
+                type: string
+                format: string
+                example: john@example.com
+            password:
+                type: string
+                format: password
+                example: StrongPassword123
+        required:
+            - email
+            - password
