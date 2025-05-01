@@ -1,6 +1,8 @@
 tags:
   - name: Health
     description: Endpoints related to health checking
+  - name: Authentication
+    description: Endpoints related to user Authentication
 
 components:
   schemas:
@@ -39,4 +41,47 @@ components:
             version:
                type: string
                example: '1'
-
+    ErrorResponse:
+        type: object
+        required:
+          - code
+          - message
+        properties:
+            code:
+               type: integer
+               format: int32
+               example: 404
+            error:
+               type: object
+               properties:
+                   code:
+                      type: string
+                      format: string
+                      example: "NOT FOUND"
+                   message:
+                      type: string
+                      format: string
+                      example: "NOT FOUND"
+                   details: {}
+            version:
+               type: string
+               example: '1'
+    UserRegisterRequest:
+        type: object
+        properties:
+            email:
+                type: string
+                format: string
+                example: john@example.com
+            password:
+                type: string
+                format: password
+                example: StrongPassword123
+            confirmPassword:
+                type: string
+                format: password
+                example: StrongPassword123
+        required:
+            - email
+            - password
+            - confirmPassword

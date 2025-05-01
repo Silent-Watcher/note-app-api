@@ -1,0 +1,44 @@
+paths:
+    /auth/register:
+        post:
+            tags:
+              - Authentication
+            summary: Authenticate user and receive accessToken & refreshToken
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserRegisterRequest'
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UserRegisterRequest'
+            responses:
+                "201":
+                    description: user registered succesfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SuccessResponse"
+                            example:
+                                code: 201
+                                message: 'user registered successfully'
+                                data:
+                                    user:
+                                       _id: "12345"
+                                       email: "JohnDoe@gmail.com"
+                                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                meta: {}
+                                version: 1
+                "400":
+                    description: email is already in use error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                            example:
+                                code: 400
+                                error:
+                                    code: "BAD REQUEST"
+                                    message: "email is already in use"
+                                version: 1
