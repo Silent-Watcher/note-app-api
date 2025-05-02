@@ -112,6 +112,8 @@ paths:
                                 version: 1
     /auth/logout:
         get:
+            security:
+              - bearerAuth: []
             tags:
               - Authentication
             summary: User logout

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import type { IAuthService } from './auth.service';
 import { authService } from './auth.service';
@@ -34,6 +35,7 @@ const createAuthController = (service: IAuthService) => ({
 
 			res.cookie('refresh_token', refreshToken, {
 				httpOnly: true,
+				secure: !CONFIG.DEBUG,
 				sameSite: 'strict',
 				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
 				path: '/auth/refresh',
@@ -91,6 +93,7 @@ const createAuthController = (service: IAuthService) => ({
 
 			res.cookie('refresh_token', newRefreshToken, {
 				httpOnly: true,
+				secure: !CONFIG.DEBUG,
 				sameSite: 'strict',
 				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
 				path: '/auth/refresh',
@@ -150,6 +153,7 @@ const createAuthController = (service: IAuthService) => ({
 			res.cookie('refresh_token', refreshToken, {
 				httpOnly: true,
 				sameSite: 'strict',
+				secure: !CONFIG.DEBUG,
 				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
 				path: '/auth/refresh',
 			});
