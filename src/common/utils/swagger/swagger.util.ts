@@ -23,6 +23,7 @@ const swaggerOptions = {
 	apis: [
 		path.join(process.cwd(), 'src/modules/**/*.swagger.yaml'),
 		path.join(process.cwd(), 'src/common/utils/swagger/components.yaml'),
+		path.join(process.cwd(), 'src/common/utils/swagger/security.yaml'),
 	],
 };
 
