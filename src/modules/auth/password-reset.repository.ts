@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import type { Types } from 'mongoose';
 import {
 	type PasswordResetDocument,
@@ -12,6 +13,8 @@ export interface IPasswordResetRepository {
 		user: Types.ObjectId,
 		tokenHash: string,
 	): Promise<PasswordResetDocument>;
+
+	findValidByTokenHash(token: string): Promise<PasswordResetDocument | null>;
 }
 
 /**
@@ -34,6 +37,17 @@ const createPasswordResetRepository = () => ({
 			tokenHash,
 		});
 		return newPasswordReset;
+	},
+
+	async findValidByTokenHash(
+		token: string,
+	): Promise<PasswordResetDocument | null> {
+		const foundedToken = await passwordResetModel.findOne({
+			tokenHash: token,
+			used: { $eq: false },
+			expiresAt: { $gt: dayjs().toDate() },
+		});
+		return foundedToken;
 	},
 });
 

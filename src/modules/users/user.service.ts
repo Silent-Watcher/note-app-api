@@ -4,15 +4,19 @@ import {
 	userRepository,
 } from '#app/modules/users/user.repository';
 
-import type { Types } from 'mongoose';
+import type { Types, UpdateResult } from 'mongoose';
 import type { UserDocument } from './user.model';
 
 /**
  * Interface defining the user service methods.
  */
 export interface IUserService {
-	findById(id: Types.ObjectId): Promise<UserDocument>;
-	findOneByEmail(email: string): Promise<UserDocument>;
+	findById(id: Types.ObjectId): Promise<UserDocument | null>;
+	findOneByEmail(email: string): Promise<UserDocument | null>;
+	updatePassword(
+		id: Types.ObjectId,
+		newPassword: string,
+	): Promise<UpdateResult>;
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
 	): Promise<UserDocument>;
@@ -27,16 +31,22 @@ export interface IUserService {
  * @param {IUserRepository} repo - The repository instance to interact with the database.
  */
 const createUserService = (repo: IUserRepository) => ({
-	findById(id: Types.ObjectId): Promise<UserDocument> {
+	findById(id: Types.ObjectId): Promise<UserDocument | null> {
 		return repo.findById(id);
 	},
-	findOneByEmail(email: string): Promise<UserDocument> {
+	findOneByEmail(email: string): Promise<UserDocument | null> {
 		return repo.findOneByEmail(email);
 	},
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
 	): Promise<UserDocument> {
 		return repo.create(createUserDto);
+	},
+	updatePassword(
+		id: Types.ObjectId,
+		newPassword: string,
+	): Promise<UpdateResult> {
+		return repo.updatePassword(id, newPassword);
 	},
 });
 

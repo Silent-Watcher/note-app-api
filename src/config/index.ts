@@ -49,5 +49,6 @@ export const CONFIG = Object.freeze({
 
 	ROUTE: Object.freeze({
 		RESET_PASSWORD: _env.RESET_PASSWORD_ROUTE,
+		LOGIN_PAGE_ROUTE: _env.LOGIN_PAGE_ROUTE,
 	}),
 });

@@ -1,7 +1,7 @@
 import { compare, hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import type { Types, UpdateResult } from 'mongoose';
+import { type Types, type UpdateResult, startSession } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { generateSecureToken } from '#app/common/helpers/token';
 import { createHttpError } from '#app/common/utils/http.util';
@@ -43,6 +43,8 @@ export interface IAuthService {
 	requestPasswordResetV1(
 		email: string,
 	): Promise<{ raw: string; hash: string }>;
+
+	resetPasswordV1(token: string, password: string): Promise<UpdateResult>;
 }
 
 const createAuthService = (
@@ -284,6 +286,42 @@ const createAuthService = (
 		);
 
 		return secureToken;
+	},
+
+	async resetPasswordV1(
+		token: string,
+		password: string,
+	): Promise<UpdateResult> {
+		const session = await startSession();
+		session.startTransaction();
+		try {
+			const tokenExists =
+				await passwordResetRepo.findValidByTokenHash(token);
+			if (!tokenExists) {
+				throw createHttpError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'invalid reset password token',
+				});
+			}
+
+			const hashedPassword = await hash(password, 10);
+
+			await tokenExists.updateOne({ $set: { used: true } });
+
+			const updateResult = await userService.updatePassword(
+				tokenExists.user as Types.ObjectId,
+				hashedPassword,
+			);
+
+			await session.commitTransaction();
+			await session.endSession();
+
+			return updateResult;
+		} catch (error) {
+			await session.abortTransaction();
+			await session.endSession();
+			throw error;
+		}
 	},
 });
 

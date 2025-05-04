@@ -91,6 +91,13 @@ const zEnv = z.object({
 			message: 'RESET_PASSWORD_ROUTE must start with "/"',
 		})
 		.min(2, { message: 'RESET_PASSWORD_ROUTE is too short' }),
+
+	LOGIN_PAGE_ROUTE: z
+		.string()
+		.startsWith('/', {
+			message: 'LOGIN_PAGE_ROUTE must start with "/"',
+		})
+		.min(2, { message: 'LOGIN_PAGE_ROUTE is too short' }),
 });
 
 /**

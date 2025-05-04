@@ -21,4 +21,5 @@ process.env.EMAIL_PASS = '186966e33c6e4e';
 process.env.EMAIL_PORT = 2525;
 process.env.EMAIL_USER = 'd8de9923b59b65';
 process.env.RESET_PASSWORD_ROUTE = '/auth/reset-password';
+process.env.LOGIN_PAGE_ROUTE = '/auth/login';
 process.env.CLIENT_BASE_URL = 'http://localhost:3000';

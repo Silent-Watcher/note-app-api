@@ -1,4 +1,4 @@
-import type { Types } from 'mongoose';
+import type { Types, UpdateResult } from 'mongoose';
 import type { CreateUserDto } from './dtos/create-user.dto';
 import { userModel } from './user.model';
 import type { UserDocument } from './user.model';
@@ -7,8 +7,12 @@ import type { UserDocument } from './user.model';
  * Interface defining the user repository methods for database operations.
  */
 export interface IUserRepository {
-	findOneByEmail(email: string): Promise<UserDocument>;
-	findById(id: Types.ObjectId): Promise<UserDocument>;
+	findOneByEmail(email: string): Promise<UserDocument | null>;
+	findById(id: Types.ObjectId): Promise<UserDocument | null>;
+	updatePassword(
+		id: Types.ObjectId,
+		newPassword: string,
+	): Promise<UpdateResult>;
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
 	): Promise<UserDocument>;
@@ -21,14 +25,14 @@ export interface IUserRepository {
  * such as finding users by email or ID and creating new users.
  */
 const createUserRepository = () => ({
-	async findOneByEmail(email: string): Promise<UserDocument> {
+	async findOneByEmail(email: string): Promise<UserDocument | null> {
 		const foundedUser = (await userModel.findOne({
 			email,
 		})) as UserDocument;
 		return foundedUser;
 	},
 
-	async findById(id: Types.ObjectId): Promise<UserDocument> {
+	async findById(id: Types.ObjectId): Promise<UserDocument | null> {
 		const foundedUser = await userModel.findById(id);
 		return foundedUser as UserDocument;
 	},
@@ -41,6 +45,18 @@ const createUserRepository = () => ({
 			password: createUserDto.password,
 		});
 		return newUser;
+	},
+	async updatePassword(
+		id: Types.ObjectId,
+		newPassword: string,
+	): Promise<UpdateResult> {
+		const result = await userModel.updateOne(
+			{ _id: id },
+			{
+				$set: { password: newPassword },
+			},
+		);
+		return result;
 	},
 });
 
