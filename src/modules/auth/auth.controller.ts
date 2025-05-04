@@ -1,10 +1,14 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { mailGenerator } from '#app/common/helpers/mailgen';
+import { sendMail } from '#app/common/utils/email';
+import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import type { IAuthService } from './auth.service';
 import { authService } from './auth.service';
+import type { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import type { LoginUserDto } from './dtos/login-user.dto';
 
 const createAuthController = (service: IAuthService) => ({
@@ -169,6 +173,36 @@ const createAuthController = (service: IAuthService) => ({
 				'Login successful.',
 			);
 			return;
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async requestPasswordResetV1(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	) {
+		try {
+			const { email } = req.body as ForgotPasswordDto;
+			const secureToken = await service.requestPasswordResetV1(email);
+
+			const resetPasswordUrl = `${CONFIG.CLIENT_BASE_URL}${CONFIG.ROUTE.RESET_PASSWORD}?token=${secureToken.hash}`;
+
+			await sendMail({
+				from: 'AI Note App 🧠💡',
+				to: email,
+				subject: 'Reset Your Password',
+				html: mailGenerator.generate(
+					generatePasswordResetEmailTemplate(resetPasswordUrl),
+				),
+			});
+
+			res.sendSuccess(
+				httpStatus.OK,
+				{},
+				'a password reset link has been sent.',
+			);
 		} catch (error) {
 			next(error);
 		}

@@ -3,14 +3,19 @@ import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
 import type { Types, UpdateResult } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { generateSecureToken } from '#app/common/helpers/token';
 import { createHttpError } from '#app/common/utils/http.util';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import { userService } from '#app/modules/users/user.service';
 import type { UserDocument } from '../users/user.model';
-import { refreshTokenRepository } from './auth.repository';
-import type { IRefreshTokenRepository } from './auth.repository';
 import type { LoginUserDto } from './dtos/login-user.dto';
+import {
+	type IPasswordResetRepository,
+	passwordResetRepository,
+} from './password-reset.repository';
+import { refreshTokenRepository } from './refresh-token.repository';
+import type { IRefreshTokenRepository } from './refresh-token.repository';
 
 /**
  * Interface defining the authentication service methods.
@@ -34,9 +39,16 @@ export interface IAuthService {
 		accessToken: string;
 		refreshToken: string;
 	}>;
+
+	requestPasswordResetV1(
+		email: string,
+	): Promise<{ raw: string; hash: string }>;
 }
 
-const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
+const createAuthService = (
+	refreshTokenRepo: IRefreshTokenRepository,
+	passwordResetRepo: IPasswordResetRepository,
+) => ({
 	/**
 	 * Registers a new user in the system.
 	 *
@@ -252,6 +264,27 @@ const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
 			accessToken: newAccessToken,
 		};
 	},
+
+	async requestPasswordResetV1(
+		email: string,
+	): Promise<{ raw: string; hash: string }> {
+		const foundedUser = await userService.findOneByEmail(email);
+		if (!foundedUser) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD_REQUEST',
+				message: 'user with this email not found',
+			});
+		}
+
+		const secureToken = await generateSecureToken();
+
+		const newPasswordReset = await passwordResetRepo.create(
+			foundedUser._id,
+			secureToken.hash,
+		);
+
+		return secureToken;
+	},
 });
 
 /**
@@ -260,4 +293,7 @@ const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
  * Provides methods related to user authentication, such as registering new users
  * and refreshing access/refresh tokens.
  */
-export const authService = createAuthService(refreshTokenRepository);
+export const authService = createAuthService(
+	refreshTokenRepository,
+	passwordResetRepository,
+);

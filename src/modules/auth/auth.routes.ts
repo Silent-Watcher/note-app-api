@@ -4,6 +4,7 @@ import { validateBody } from '#app/common/middlewares/dataValidation';
 import { verifyUser } from '#app/common/middlewares/verifyUser';
 import { zCreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import { authController } from './auth.controller';
+import { zForgotPasswordDto } from './dtos/forgot-password.dto';
 import { zLoginUserDto } from './dtos/login-user.dto';
 
 const authRouterV1 = Router();
@@ -66,6 +67,13 @@ authRouterV1.post(
 	blockIfAuthenticated,
 	validateBody(zLoginUserDto),
 	authController.loginV1,
+);
+
+authRouterV1.post(
+	'/forgot-password',
+	blockIfAuthenticated,
+	validateBody(zForgotPasswordDto),
+	authController.requestPasswordResetV1,
 );
 
 export { authRouterV1 };
