@@ -267,6 +267,18 @@ const createAuthService = (
 		};
 	},
 
+	/**
+	 * Initiates a password reset request by generating a secure token for the user.
+	 *
+	 * This function performs the following:
+	 * 1. Verifies that a user with the given email exists.
+	 * 2. Generates a secure token (both raw and hashed versions).
+	 * 3. Stores the hashed token in the database for future validation.
+	 *
+	 * @param {string} email - The email address of the user requesting a password reset.
+	 * @returns {Promise<{ raw: string; hash: string }>} An object containing the raw token (for sending via email) and the hashed token (stored in the database).
+	 * @throws {HttpError} If no user is found with the provided email.
+	 */
 	async requestPasswordResetV1(
 		email: string,
 	): Promise<{ raw: string; hash: string }> {
@@ -288,6 +300,20 @@ const createAuthService = (
 		return secureToken;
 	},
 
+	/**
+	 * Resets the user's password using a valid reset token.
+	 *
+	 * This function performs the following steps in a transaction:
+	 * 1. Validates the reset token.
+	 * 2. Hashes the new password.
+	 * 3. Marks the token as used.
+	 * 4. Updates the user's password in the database.
+	 *
+	 * @param {string} token - The reset token provided to the user.
+	 * @param {string} password - The new password to set for the user.
+	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the password update operation.
+	 * @throws {HttpError} If the token is invalid or any error occurs during the transaction.
+	 */
 	async resetPasswordV1(
 		token: string,
 		password: string,

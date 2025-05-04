@@ -24,7 +24,7 @@ export interface IPasswordResetRepository {
  *
  * @returns {{
  *   create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument>;
- *   findOne(refreshToken: string, userId: Types.ObjectId): Promise<RefreshTokenDocument>;
+ *   findValidByTokenHash(token: string): Promise<PasswordResetDocument | null>;
  * }}
  */
 const createPasswordResetRepository = () => ({

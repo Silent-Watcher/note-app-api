@@ -251,6 +251,20 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
+	/**
+	 * Handles the password reset request from the client.
+	 *
+	 * This controller method:
+	 * 1. Extracts the reset token and new password from the request body.
+	 * 2. Attempts to reset the password via the service layer.
+	 * 3. Responds with an error if the token is invalid.
+	 * 4. Redirects the user to the login page upon success.
+	 *
+	 * @param {Request} req - The Express request object, expected to contain `token` and `password` in the body.
+	 * @param {Response} res - The Express response object.
+	 * @param {NextFunction} next - The Express next middleware function, used for error handling.
+	 * @returns {Promise<void>} A promise that resolves when the response has been sent.
+	 */
 	async resetPasswordV1(
 		req: Request,
 		res: Response,

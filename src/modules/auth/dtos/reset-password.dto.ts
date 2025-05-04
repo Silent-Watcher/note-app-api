@@ -1,5 +1,18 @@
 import { z } from 'zod';
 
+/**
+ * Zod schema for validating password reset requests.
+ *
+ * Ensures the request body includes:
+ * - A non-empty reset token.
+ * - A password with a minimum length of 8 characters.
+ * - A confirmPassword field that:
+ *   - Has a minimum length of 8 characters.
+ *   - Must match the password field.
+ *
+ * Custom error messages are provided for all validations, and mismatched passwords
+ * return an error attached to the `confirmPassword` field.
+ */
 export const zResetPasswordDto = z
 	.object({
 		token: z.string().nonempty('Token is required'),
