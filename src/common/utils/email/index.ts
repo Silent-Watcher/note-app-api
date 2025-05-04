@@ -4,6 +4,12 @@ import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
 import { emailTransporter } from './transporter';
 
+/**
+ * Extended error type for handling email sending failures.
+ *
+ * This interface captures additional metadata commonly returned by Nodemailer
+ * when an email fails to send.
+ */
 interface SendMailError extends Error {
 	code?: string;
 	responseCode?: number;
@@ -11,6 +17,12 @@ interface SendMailError extends Error {
 	command?: string;
 }
 
+/**
+ * Type guard to check whether a given error is a `SendMailError`.
+ *
+ * @param {unknown} err - The value to check.
+ * @returns {err is SendMailError} `true` if the error contains Nodemailer-specific properties.
+ */
 function isSendMailError(err: unknown): err is SendMailError {
 	return (
 		err instanceof Error &&
@@ -18,6 +30,22 @@ function isSendMailError(err: unknown): err is SendMailError {
 	);
 }
 
+/**
+ * Sends an email using the specified Nodemailer transporter.
+ *
+ * This function wraps `transporter.sendMail()` and handles errors by converting them
+ * into consistent HTTP errors using a custom error utility.
+ *
+ * @param {Mail.Options} emailSendOptions - Mail options including `to`, `from`, `subject`, `html`, etc.
+ * @param {Transporter} [transporter=emailTransporter] - A Nodemailer transporter instance.
+ *   Defaults to a preconfigured `emailTransporter`.
+ *
+ * @returns {Promise<string>} The `messageId` of the sent email if successful.
+ *
+ * @throws {HttpError} Throws an HTTP 500 error if sending the email fails, with
+ * additional diagnostic details when available.
+ *
+ */
 export async function sendMail(
 	emailSendOptions: Mail.Options,
 	transporter: Transporter = emailTransporter,
