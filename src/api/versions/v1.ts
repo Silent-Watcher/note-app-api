@@ -1,6 +1,9 @@
 import { Router } from 'express';
+import type { Request, Response } from 'express';
+import { httpStatus } from '#app/common/helpers/httpstatus';
 import { verifyUser } from '#app/common/middlewares/verifyUser';
 import { configSwaggerV1 } from '#app/common/utils/swagger/swagger.util';
+import { CONFIG } from '#app/config';
 import { appController } from '#app/modules/app/app.controller';
 import { authRouterV1 } from '#app/modules/auth/auth.routes';
 
@@ -36,5 +39,29 @@ router.get('/superman', verifyUser, (req, res, next) => {
  * This can be used for monitoring or load balancer health checks.
  */
 router.get('/health', appController.checkHealth);
+
+if (CONFIG.DEBUG) {
+	router.get(
+		'/dev/recaptcha',
+		(req, res, next) => {
+			const auth = req.get('x-dev-token') ?? req.query.key;
+
+			if (!auth || auth !== CONFIG.RECAPTCHA.DEV_AUTH) {
+				res.sendError(httpStatus.UNAUTHORIZED, {
+					code: 'UNAUTHORIZED',
+					message: 'you are not allowed!',
+				});
+				return;
+			}
+			next();
+		},
+		(req: Request, res: Response) => {
+			res.render('dev-recaptcha', {
+				SITE_KEY: CONFIG.RECAPTCHA.SITE_KEY,
+				apiVersion: req.apiVersion,
+			});
+		},
+	);
+}
 
 export default router;

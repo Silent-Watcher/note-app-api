@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://www.google.com/recaptcha/api.js?render=<%= SITE_KEY %>"></script>
+  <link rel="stylesheet" href="/styles/dev-recaptcha.css">
+</head>
+<body>
+   <h1>GET RECAPTCHA TOKEN:</h1>
+  <label for="actionInput" >ReCAPTCHA Action:</label>
+  <input id="actionInput" type="text" placeholder="Enter action" value="dev_test" />
+  <p>if you leave the input empty the action value will be set to : <b>dev_test</b></p>
+  <button id="btn">Get v3 Token</button>
+  <pre id="out"></pre>
+
+  <button id="copyBtn">copy</button>
+
+  <p>API VERSION: V<%= apiVersion %></p>
+  <script>
+    document.getElementById('btn').onclick = () => {
+      const action = document.getElementById('actionInput').value || 'dev_test';
+      grecaptcha.ready(() => {
+        grecaptcha.execute('<%= SITE_KEY %>', { action })
+          .then(token => {
+            document.getElementById('out').textContent = token;
+          });
+      });
+    };
+
+	document.getElementById('copyBtn').onclick = () => {
+      const token = document.getElementById('out').textContent;
+      if (!token) return alert('No token to copy');
+      navigator.clipboard.writeText(token)
+        .then(() => alert('Token copied to clipboard!'))
+        .catch(err => alert('Failed to copy token: ' + err));
+    };
+  </script>
+</body>
+</html>

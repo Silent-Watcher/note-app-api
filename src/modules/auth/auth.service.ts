@@ -1,16 +1,21 @@
 import { compare, hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import type { Types, UpdateResult } from 'mongoose';
+import { type Types, type UpdateResult, startSession } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { generateSecureResetPasswordToken } from '#app/common/helpers/resetPasswordToken';
 import { createHttpError } from '#app/common/utils/http.util';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import { userService } from '#app/modules/users/user.service';
 import type { UserDocument } from '../users/user.model';
-import { refreshTokenRepository } from './auth.repository';
-import type { IRefreshTokenRepository } from './auth.repository';
 import type { LoginUserDto } from './dtos/login-user.dto';
+import {
+	type IPasswordResetRepository,
+	passwordResetRepository,
+} from './password-reset.repository';
+import { refreshTokenRepository } from './refresh-token.repository';
+import type { IRefreshTokenRepository } from './refresh-token.repository';
 
 /**
  * Interface defining the authentication service methods.
@@ -34,9 +39,18 @@ export interface IAuthService {
 		accessToken: string;
 		refreshToken: string;
 	}>;
+
+	requestPasswordResetV1(
+		email: string,
+	): Promise<{ raw: string; hash: string }>;
+
+	resetPasswordV1(token: string, password: string): Promise<UpdateResult>;
 }
 
-const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
+const createAuthService = (
+	refreshTokenRepo: IRefreshTokenRepository,
+	passwordResetRepo: IPasswordResetRepository,
+) => ({
 	/**
 	 * Registers a new user in the system.
 	 *
@@ -252,6 +266,89 @@ const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
 			accessToken: newAccessToken,
 		};
 	},
+
+	/**
+	 * Initiates a password reset request by generating a secure token for the user.
+	 *
+	 * This function performs the following:
+	 * 1. Verifies that a user with the given email exists.
+	 * 2. Generates a secure token (both raw and hashed versions).
+	 * 3. Stores the hashed token in the database for future validation.
+	 *
+	 * @param {string} email - The email address of the user requesting a password reset.
+	 * @returns {Promise<{ raw: string; hash: string }>} An object containing the raw token (for sending via email) and the hashed token (stored in the database).
+	 * @throws {HttpError} If no user is found with the provided email.
+	 */
+	async requestPasswordResetV1(
+		email: string,
+	): Promise<{ raw: string; hash: string }> {
+		const foundedUser = await userService.findOneByEmail(email);
+		if (!foundedUser) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD_REQUEST',
+				message: 'user with this email not found',
+			});
+		}
+
+		const secureToken = await generateSecureResetPasswordToken();
+
+		const newPasswordReset = await passwordResetRepo.create(
+			foundedUser._id,
+			secureToken.hash,
+		);
+
+		return secureToken;
+	},
+
+	/**
+	 * Resets the user's password using a valid reset token.
+	 *
+	 * This function performs the following steps in a transaction:
+	 * 1. Validates the reset token.
+	 * 2. Hashes the new password.
+	 * 3. Marks the token as used.
+	 * 4. Updates the user's password in the database.
+	 *
+	 * @param {string} token - The reset token provided to the user.
+	 * @param {string} password - The new password to set for the user.
+	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the password update operation.
+	 * @throws {HttpError} If the token is invalid or any error occurs during the transaction.
+	 */
+	async resetPasswordV1(
+		token: string,
+		password: string,
+	): Promise<UpdateResult> {
+		const session = await startSession();
+		session.startTransaction();
+		try {
+			const tokenExists =
+				await passwordResetRepo.findValidByTokenHash(token);
+			if (!tokenExists) {
+				throw createHttpError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'invalid reset password token',
+				});
+			}
+
+			const hashedPassword = await hash(password, 10);
+
+			await tokenExists.updateOne({ $set: { used: true } });
+
+			const updateResult = await userService.updatePassword(
+				tokenExists.user as Types.ObjectId,
+				hashedPassword,
+			);
+
+			await session.commitTransaction();
+			await session.endSession();
+
+			return updateResult;
+		} catch (error) {
+			await session.abortTransaction();
+			await session.endSession();
+			throw error;
+		}
+	},
 });
 
 /**
@@ -260,4 +357,7 @@ const createAuthService = (refreshTokenRepo: IRefreshTokenRepository) => ({
  * Provides methods related to user authentication, such as registering new users
  * and refreshing access/refresh tokens.
  */
-export const authService = createAuthService(refreshTokenRepository);
+export const authService = createAuthService(
+	refreshTokenRepository,
+	passwordResetRepository,
+);

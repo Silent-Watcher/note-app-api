@@ -15,7 +15,7 @@ const swaggerOptions = {
 		},
 		servers: [
 			{
-				url: `http://${CONFIG.APP.HOST}:${CONFIG.APP.PORT}/api`,
+				url: `${CONFIG.APP.URL}/api`,
 				description: 'Local server',
 			},
 		],

@@ -62,6 +62,49 @@ const zEnv = z.object({
 			/^[0-9a-f]{128}$/,
 			'COOKIE_SECRET must be a 128-character hexadecimal string',
 		),
+
+	EMAIL_HOST: z
+		.string()
+		.url()
+		.or(z.string().nonempty('EMAIL_HOST is required')), // Mailtrap's domain is not a valid URL, so fallback to non-empty string
+	EMAIL_PORT: z
+		.string()
+		.regex(/^\d+$/, { message: 'EMAIL_PORT must be a number' })
+		.transform(Number)
+		.refine((port) => port > 0 && port < 65536, {
+			message: 'EMAIL_PORT must be a valid port number',
+		}),
+	EMAIL_USER: z.string().nonempty('EMAIL_USER is required'),
+	EMAIL_PASS: z.string().nonempty('EMAIL_PASS is required'),
+	EMAIL_FROM_NAME: z.string().nonempty('EMAIL_FROM_NAME is required'),
+	EMAIL_FROM_ADDRESS: z
+		.string()
+		.email({ message: 'EMAIL_FROM_ADDRESS must be a valid email address' }),
+
+	CLIENT_BASE_URL: z
+		.string()
+		.url({ message: 'CLIENT_BASE_URL must be a valid URL' }),
+
+	RESET_PASSWORD_ROUTE: z
+		.string()
+		.startsWith('/', {
+			message: 'RESET_PASSWORD_ROUTE must start with "/"',
+		})
+		.min(2, { message: 'RESET_PASSWORD_ROUTE is too short' }),
+
+	LOGIN_PAGE_ROUTE: z
+		.string()
+		.startsWith('/', {
+			message: 'LOGIN_PAGE_ROUTE must start with "/"',
+		})
+		.min(2, { message: 'LOGIN_PAGE_ROUTE is too short' }),
+
+	RECAPTCHA_SITE_KEY: z.string().nonempty('RECAPTCHA_SITE_KEY is required'),
+	RECAPTCHA_SECRET_KEY: z
+		.string()
+		.nonempty('RECAPTCHA_SECRET_KEY is required'),
+
+	DEV_RECAPTCHA_AUTH: z.string().nonempty('DEV_RECAPTCHA_AUTH is required'),
 });
 
 /**

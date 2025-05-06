@@ -1,6 +1,6 @@
 import type { Types, UpdateResult } from 'mongoose';
-import { refreshTokenModel } from './auth.model';
-import type { RefreshToken, RefreshTokenDocument } from './auth.model';
+import { refreshTokenModel } from './refresh-token.model';
+import type { RefreshToken, RefreshTokenDocument } from './refresh-token.model';
 
 /**
  * Interface defining the methods for interacting with refresh token documents in the database.

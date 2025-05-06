@@ -1,0 +1,42 @@
+*,*::before,*::after{
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+body{
+	font-family:sans-serif;
+	display:flex;
+	flex-direction:column;
+	align-items:center;
+	margin-top:2rems
+}
+#btn{
+	padding:.5rem 1rem; font-size:1rem
+}
+#actionInput{
+	padding:.5rem .75rem; font-size:1rem; margin-bottom:1rem; width:200px;
+}
+button{
+	margin: 25px 0;
+}
+pre{
+	white-space:break-spaces;
+	word-wrap:break-word;
+	width: 80%;
+	margin: 20px auto;
+}
+button {
+	cursor: pointer;
+}
+#copyBtn{
+	padding: 5px 10px;font-weight: bold;
+}
+
+label{
+	margin: 2rem 0; font-size:1rem
+}
+
+h1{
+	margin-top: 2rem;
+}
+
