@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
 import { type Types, type UpdateResult, startSession } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import { generateSecureToken } from '#app/common/helpers/token';
+import { generateSecureResetPasswordToken } from '#app/common/helpers/resetPasswordToken';
 import { createHttpError } from '#app/common/utils/http.util';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
@@ -290,7 +290,7 @@ const createAuthService = (
 			});
 		}
 
-		const secureToken = await generateSecureToken();
+		const secureToken = await generateSecureResetPasswordToken();
 
 		const newPasswordReset = await passwordResetRepo.create(
 			foundedUser._id,

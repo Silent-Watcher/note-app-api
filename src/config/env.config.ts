@@ -98,6 +98,11 @@ const zEnv = z.object({
 			message: 'LOGIN_PAGE_ROUTE must start with "/"',
 		})
 		.min(2, { message: 'LOGIN_PAGE_ROUTE is too short' }),
+
+	RECAPTCHA_SITE_KEY: z.string().nonempty('RECAPTCHA_SITE_KEY is required'),
+	RECAPTCHA_SECRET_KEY: z
+		.string()
+		.nonempty('RECAPTCHA_SECRET_KEY is required'),
 });
 
 /**

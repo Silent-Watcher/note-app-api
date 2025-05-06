@@ -51,4 +51,9 @@ export const CONFIG = Object.freeze({
 		RESET_PASSWORD: _env.RESET_PASSWORD_ROUTE,
 		LOGIN_PAGE_ROUTE: _env.LOGIN_PAGE_ROUTE,
 	}),
+
+	RECAPTCHA: Object.freeze({
+		SITE_KEY: _env.RECAPTCHA_SITE_KEY,
+		SECRET_KEY: _env.RECAPTCHA_SECRET_KEY,
+	}),
 });

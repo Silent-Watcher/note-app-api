@@ -11,7 +11,7 @@ import bcrypt from 'bcrypt';
  * @param {number} [sizeBytes=32] - The number of random bytes to generate for the token.
  *   Defaults to 32, which produces a 64-character hexadecimal string.
  */
-export async function generateSecureToken(
+export async function generateSecureResetPasswordToken(
 	sizeBytes = 32,
 ): Promise<{ raw: string; hash: string }> {
 	const raw = randomBytes(sizeBytes).toString('hex');
