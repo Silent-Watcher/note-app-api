@@ -11,6 +11,12 @@ const zCaptcha = z
 	.nonempty({ message: 'captcha token required!' })
 	.min(1);
 
+/**
+ * Middleware to verify Google reCAPTCHA and determine access level.
+ *
+ * @param action - The expected action name (used to validate token's action).
+ * @returns An Express middleware that validates the captcha and enforces action-based logic.
+ */
 export function verifyCaptcha(action: string) {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const token = req.body?.captchaToken as string;

@@ -3,6 +3,9 @@ import { fromZodError } from 'zod-validation-error';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
 
+/**
+ * Possible error codes returned by Google reCAPTCHA.
+ */
 const zRecaptchaErrorCodes = z.enum([
 	'missing-input-secret',
 	'invalid-input-secret',
@@ -12,6 +15,9 @@ const zRecaptchaErrorCodes = z.enum([
 	'timeout-or-duplicate',
 ]);
 
+/**
+ * Schema representing the expected response from Google's reCAPTCHA API.
+ */
 const zGoogleCaptchaResponse = z.object({
 	success: z.boolean(),
 	action: z.string().optional(),
@@ -22,6 +28,13 @@ const zGoogleCaptchaResponse = z.object({
 
 type GoogleCaptchaResponse = z.infer<typeof zGoogleCaptchaResponse>;
 
+/**
+ * Verifies a reCAPTCHA token with Google's API.
+ *
+ * @param token - The reCAPTCHA token received from the client.
+ * @param remoteip - The user's IP address to pass to the verification request.
+ * @returns A promise that resolves to a structured object containing reCAPTCHA verification results.
+ */
 export async function verifyWithGoolge(
 	token: string,
 	remoteip: string,
