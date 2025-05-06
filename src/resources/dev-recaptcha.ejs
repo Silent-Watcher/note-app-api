@@ -2,15 +2,18 @@
 <html>
 <head>
   <script src="https://www.google.com/recaptcha/api.js?render=<%= SITE_KEY %>"></script>
+  <link rel="stylesheet" href="/styles/dev-recaptcha.css">
 </head>
-<body style="font-family:sans-serif; display:flex; flex-direction:column; align-items:center; margin-top:2rem">
-  <!-- Input to specify the action dynamically -->
-  <label for="actionInput" style="margin-bottom:0.5rem; font-size:1rem">ReCAPTCHA Action:</label>
-  <input id="actionInput" type="text" placeholder="Enter action"
-         style="padding:.5rem .75rem; font-size:1rem; margin-bottom:1rem; width:200px;" value="dev_test" />
+<body>
+   <h1>GET RECAPTCHA TOKEN:</h1>
+  <label for="actionInput" >ReCAPTCHA Action:</label>
+  <input id="actionInput" type="text" placeholder="Enter action" value="dev_test" />
   <p>if you leave the input empty the action value will be set to : <b>dev_test</b></p>
-  <button id="btn" style="padding:.5rem 1rem; font-size:1rem">Get v3 Token</button>
-  <pre id="out" style="margin-top:1rem; white-space:break-spaces; word-wrap:break-word;"></pre>
+  <button id="btn">Get v3 Token</button>
+  <pre id="out"></pre>
+
+  <button id="copyBtn">copy</button>
+
   <p>API VERSION: V<%= apiVersion %></p>
   <script>
     document.getElementById('btn').onclick = () => {
@@ -21,6 +24,14 @@
             document.getElementById('out').textContent = token;
           });
       });
+    };
+
+	document.getElementById('copyBtn').onclick = () => {
+      const token = document.getElementById('out').textContent;
+      if (!token) return alert('No token to copy');
+      navigator.clipboard.writeText(token)
+        .then(() => alert('Token copied to clipboard!'))
+        .catch(err => alert('Failed to copy token: ' + err));
     };
   </script>
 </body>
