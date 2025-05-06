@@ -24,5 +24,6 @@ process.env.RESET_PASSWORD_ROUTE = '/auth/reset-password';
 process.env.LOGIN_PAGE_ROUTE = '/auth/login';
 process.env.CLIENT_BASE_URL = 'http://localhost:3000';
 
-process.env.RECAPTCHA_SECRET_KEY = 'asdad';
-process.env.RECAPTCHA_SITE_KEY = 'asdasd';
+process.env.RECAPTCHA_SECRET_KEY = 'dummy';
+process.env.RECAPTCHA_SITE_KEY = 'dummy';
+process.env.DEV_RECAPTCHA_AUTH = 'dummy';

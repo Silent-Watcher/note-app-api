@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://www.google.com/recaptcha/api.js?render=<%= SITE_KEY %>"></script>
+</head>
+<body style="font-family:sans-serif; display:flex; flex-direction:column; align-items:center; margin-top:2rem">
+  <!-- Input to specify the action dynamically -->
+  <label for="actionInput" style="margin-bottom:0.5rem; font-size:1rem">ReCAPTCHA Action:</label>
+  <input id="actionInput" type="text" placeholder="Enter action"
+         style="padding:.5rem .75rem; font-size:1rem; margin-bottom:1rem; width:200px;" value="dev_test" />
+  <p>if you leave the input empty the action value will be set to : <b>dev_test</b></p>
+  <button id="btn" style="padding:.5rem 1rem; font-size:1rem">Get v3 Token</button>
+  <pre id="out" style="margin-top:1rem; white-space:break-spaces; word-wrap:break-word;"></pre>
+  <p>API VERSION: V<%= apiVersion %></p>
+  <script>
+    document.getElementById('btn').onclick = () => {
+      const action = document.getElementById('actionInput').value || 'dev_test';
+      grecaptcha.ready(() => {
+        grecaptcha.execute('<%= SITE_KEY %>', { action })
+          .then(token => {
+            document.getElementById('out').textContent = token;
+          });
+      });
+    };
+  </script>
+</body>
+</html>

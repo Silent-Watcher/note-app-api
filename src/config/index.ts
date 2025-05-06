@@ -55,5 +55,6 @@ export const CONFIG = Object.freeze({
 	RECAPTCHA: Object.freeze({
 		SITE_KEY: _env.RECAPTCHA_SITE_KEY,
 		SECRET_KEY: _env.RECAPTCHA_SECRET_KEY,
+		DEV_AUTH: _env.DEV_RECAPTCHA_AUTH,
 	}),
 });

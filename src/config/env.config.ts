@@ -103,6 +103,8 @@ const zEnv = z.object({
 	RECAPTCHA_SECRET_KEY: z
 		.string()
 		.nonempty('RECAPTCHA_SECRET_KEY is required'),
+
+	DEV_RECAPTCHA_AUTH: z.string().nonempty('DEV_RECAPTCHA_AUTH is required'),
 });
 
 /**
