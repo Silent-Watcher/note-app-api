@@ -41,8 +41,24 @@ router.get('/superman', verifyUser, (req, res, next) => {
 router.get('/health', appController.checkHealth);
 
 if (CONFIG.DEBUG) {
+	/**
+	 * Development-only route to manually test the reCAPTCHA widget rendering.
+	 *
+	 * @route GET /dev/recaptcha
+	 * @access Protected via x-dev-token or query key
+	 *
+	 * Middleware 1: Checks if the developer token is provided and valid.
+	 * Middleware 2: Renders the dev-recaptcha view with necessary config.
+	 */
 	router.get(
 		'/dev/recaptcha',
+		/**
+		 * Middleware to authorize access using a development token.
+		 *
+		 * @param req - Express Request object
+		 * @param res - Express Response object
+		 * @param next - Express NextFunction callback
+		 */
 		(req, res, next) => {
 			const auth = req.get('x-dev-token') ?? req.query.key;
 

@@ -68,6 +68,7 @@ authRouterV1.get('/logout', verifyUser, authController.logoutV1);
 authRouterV1.post(
 	'/login',
 	blockIfAuthenticated,
+	verifyCaptcha('login'),
 	validateBody(zLoginUserDto),
 	authController.loginV1,
 );
@@ -86,6 +87,7 @@ authRouterV1.post(
 authRouterV1.post(
 	'/forgot-password',
 	blockIfAuthenticated,
+	verifyCaptcha('forgot-pass'),
 	validateBody(zForgotPasswordDto),
 	authController.requestPasswordResetV1,
 );
