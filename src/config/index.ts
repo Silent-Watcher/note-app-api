@@ -28,6 +28,13 @@ export const CONFIG = Object.freeze({
 		}),
 	}),
 
+	REDIS: Object.freeze({
+		HOST: _env.REDIS_HOST,
+		PORT: _env.REDIS_PORT,
+		USERNAME: _env.REDIS_USERNAME,
+		PASSWORD: _env.REDIS_PASSWORD,
+	}),
+
 	SECRET: Object.freeze({
 		REFRESH_TOKEN: _env.REFRESH_TOKEN_SECRET,
 		ACCESS_TOKEN: _env.ACCESS_TOKEN_SECRET,

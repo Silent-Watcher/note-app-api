@@ -2,6 +2,7 @@ import type { HttpStatusCode } from '#app/common/helpers/httpstatus';
 import type { HttpErrorDetails } from '#app/common/utils/http.util';
 import type { UserDocument } from '#app/modules/users/user.model';
 import 'express-serve-static-core';
+import type Redis from 'ioredis';
 
 declare module 'express-serve-static-core' {
 	/**
@@ -22,6 +23,13 @@ declare module 'express-serve-static-core' {
 		 * the user has been validated via a token or session.
 		 */
 		user?: UserDocument;
+
+		/**
+		 * A singleton Redis client attached to the request.
+		 *
+		 * Initialized via middleware and used for caching, session, etc.
+		 */
+		redis: Redis;
 	}
 
 	/**
