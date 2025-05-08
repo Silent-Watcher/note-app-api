@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import type { Types } from 'mongoose';
+import { mongo } from '#app/config/db/mongo.condig';
 import {
 	type PasswordResetDocument,
 	passwordResetModel,
@@ -28,26 +29,26 @@ export interface IPasswordResetRepository {
  * }}
  */
 const createPasswordResetRepository = () => ({
-	async create(
+	create(
 		user: Types.ObjectId,
 		tokenHash: string,
 	): Promise<PasswordResetDocument> {
-		const newPasswordReset = await passwordResetModel.create({
-			user,
-			tokenHash,
-		});
-		return newPasswordReset;
+		return mongo.fire(() =>
+			passwordResetModel.create({
+				user,
+				tokenHash,
+			}),
+		) as Promise<PasswordResetDocument>;
 	},
 
-	async findValidByTokenHash(
-		token: string,
-	): Promise<PasswordResetDocument | null> {
-		const foundedToken = await passwordResetModel.findOne({
-			tokenHash: token,
-			used: { $eq: false },
-			expiresAt: { $gt: dayjs().toDate() },
-		});
-		return foundedToken;
+	findValidByTokenHash(token: string): Promise<PasswordResetDocument | null> {
+		return mongo.fire(() =>
+			passwordResetModel.findOne({
+				tokenHash: token,
+				used: { $eq: false },
+				expiresAt: { $gt: dayjs().toDate() },
+			}),
+		) as Promise<PasswordResetDocument | null>;
 	},
 });
 

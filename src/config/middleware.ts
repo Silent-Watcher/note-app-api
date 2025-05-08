@@ -5,7 +5,7 @@ import express from 'express';
 import { extractVersion } from '#app/common/middlewares/extractVersion';
 import { responseMiddleware } from '#app/common/middlewares/response';
 import { CONFIG } from '.';
-import { rawRedis } from './db/redis.config';
+import { rawMongo } from './db/mongo.condig';
 
 /**
  * Configure and attach all global middleware, view engine settings,
@@ -27,6 +27,8 @@ export function configureMiddleware(app: Application) {
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: false }));
 
+	app.use(responseMiddleware);
+
 	// view engine / static
 	app.set('view engine', 'ejs');
 	app.set('views', path.join(process.cwd(), 'src', 'resources'));
@@ -35,12 +37,4 @@ export function configureMiddleware(app: Application) {
 	// cookies, versioning, etc.
 	app.use(cookieParser(CONFIG.SECRET.COOKIE));
 	app.use(extractVersion());
-
-	// **Redis** – attach singleton client on every request
-	// app.use((req, _res, next) => {
-	// 	req.redis = rawRedis();
-	// 	next();
-	// });
-
-	app.use(responseMiddleware);
 }

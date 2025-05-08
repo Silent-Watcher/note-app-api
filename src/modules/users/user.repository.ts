@@ -1,4 +1,5 @@
 import type { Types, UpdateResult } from 'mongoose';
+import { mongo } from '#app/config/db/mongo.condig';
 import type { CreateUserDto } from './dtos/create-user.dto';
 import { userModel } from './user.model';
 import type { UserDocument } from './user.model';
@@ -25,38 +26,41 @@ export interface IUserRepository {
  * such as finding users by email or ID and creating new users.
  */
 const createUserRepository = () => ({
-	async findOneByEmail(email: string): Promise<UserDocument | null> {
-		const foundedUser = (await userModel.findOne({
-			email,
-		})) as UserDocument;
-		return foundedUser;
+	findOneByEmail(email: string): Promise<UserDocument | null> {
+		return mongo.fire(() =>
+			userModel.findOne({ email }),
+		) as Promise<UserDocument | null>;
 	},
 
-	async findById(id: Types.ObjectId): Promise<UserDocument | null> {
-		const foundedUser = await userModel.findById(id);
-		return foundedUser as UserDocument;
+	findById(id: Types.ObjectId): Promise<UserDocument | null> {
+		return mongo.fire(() =>
+			userModel.findById(id),
+		) as Promise<UserDocument | null>;
 	},
 
-	async create(
+	create(
 		createUserDto: Omit<CreateUserDto, 'confirmPassword'>,
 	): Promise<UserDocument> {
-		const newUser = await userModel.create({
-			email: createUserDto.email,
-			password: createUserDto.password,
-		});
-		return newUser;
+		return mongo.fire(() =>
+			userModel.create({
+				email: createUserDto.email,
+				password: createUserDto.password,
+			}),
+		) as Promise<UserDocument>;
 	},
-	async updatePassword(
+
+	updatePassword(
 		id: Types.ObjectId,
 		newPassword: string,
 	): Promise<UpdateResult> {
-		const result = await userModel.updateOne(
-			{ _id: id },
-			{
-				$set: { password: newPassword },
-			},
-		);
-		return result;
+		return mongo.fire(() =>
+			userModel.updateOne(
+				{ _id: id },
+				{
+					$set: { password: newPassword },
+				},
+			),
+		) as Promise<UpdateResult>;
 	},
 });
 

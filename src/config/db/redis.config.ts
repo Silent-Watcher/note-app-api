@@ -5,6 +5,7 @@ import { CONFIG } from '..';
 
 export const rawRedis: () => Redis = (() => {
 	let client: Redis | null = null;
+	const MAX_RETRIES = 6;
 	return () => {
 		if (!client) {
 			client = new Redis({
@@ -14,8 +15,10 @@ export const rawRedis: () => Redis = (() => {
 				username: CONFIG.REDIS.USERNAME,
 				tls: {},
 				retryStrategy(times) {
-					if (times > 6) {
-						logger.error('🔌 Redis gave up after 6 retries');
+					if (times > MAX_RETRIES) {
+						logger.error(
+							`🔌 Redis gave up after ${MAX_RETRIES}retries`,
+						);
 						return null; // stop retrying
 					}
 					// otherwise wait a bit before next retry

@@ -1,4 +1,5 @@
 import type { Types, UpdateResult } from 'mongoose';
+import { mongo } from '#app/config/db/mongo.condig';
 import { refreshTokenModel } from './refresh-token.model';
 import type { RefreshToken, RefreshTokenDocument } from './refresh-token.model';
 
@@ -13,7 +14,7 @@ export interface IRefreshTokenRepository {
 	findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
-	): Promise<RefreshTokenDocument>;
+	): Promise<RefreshTokenDocument | null>;
 
 	invalidateMany(user: Types.ObjectId): Promise<UpdateResult>;
 }
@@ -29,20 +30,22 @@ export interface IRefreshTokenRepository {
  * }}
  */
 const createRefreshTokenRepository = () => ({
-	async create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
-		const result = await refreshTokenModel.create(newRefreshToken);
-		return result;
+	create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
+		return mongo.fire(() =>
+			refreshTokenModel.create(newRefreshToken),
+		) as Promise<RefreshTokenDocument>;
 	},
 
-	async findOne(
+	findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
-	): Promise<RefreshTokenDocument> {
-		const result = await refreshTokenModel.findOne({
-			user: userId,
-			hash: refreshToken,
-		});
-		return result as RefreshTokenDocument;
+	): Promise<RefreshTokenDocument | null> {
+		return mongo.fire(() =>
+			refreshTokenModel.findOne({
+				user: userId,
+				hash: refreshToken,
+			}),
+		) as Promise<RefreshTokenDocument | null>;
 	},
 
 	/**
@@ -51,14 +54,15 @@ const createRefreshTokenRepository = () => ({
 	 * @param {Types.ObjectId} user - The ObjectId of the user whose refresh tokens should be invalidated.
 	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the updateMany operation.
 	 */
-	async invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
-		const result = await refreshTokenModel.updateMany(
-			{ user },
-			{
-				$set: { status: 'invalid' },
-			},
-		);
-		return result;
+	invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
+		return mongo.fire(() =>
+			refreshTokenModel.updateMany(
+				{ user },
+				{
+					$set: { status: 'invalid' },
+				},
+			),
+		) as Promise<UpdateResult>;
 	},
 });
 

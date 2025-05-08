@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { description, name, version } from 'package.json';
 import { _env } from './env.config';
 
@@ -20,11 +21,16 @@ export const CONFIG = Object.freeze({
 	}),
 
 	DB: Object.freeze({
-		DEV: Object.freeze({
-			HOST: _env.MONGO_HOST,
-			PORT: _env.MONGO_PORT,
-			USERNAME: _env.MONGO_USERNAME,
-			PASSWORD: _env.MONGO_PASSWORD,
+		HOST: _env.MONGO_HOST,
+		PORT: _env.MONGO_PORT,
+		USERNAME: _env.MONGO_USERNAME,
+		PASSWORD: _env.MONGO_PASSWORD,
+		STATE: mongoose.connection.readyState,
+		STATE_MAP: Object.freeze({
+			0: 'DISCONNECTED',
+			1: 'CONNECTED',
+			2: 'CONNECTING',
+			3: 'DISCONNECTING',
 		}),
 	}),
 
