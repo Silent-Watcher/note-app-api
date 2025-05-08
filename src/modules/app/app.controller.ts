@@ -1,6 +1,12 @@
+import dayjs from 'dayjs';
 import type { NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import { rawRedis, redis } from '#app/config/db/redis.config';
+import { MONGO_STATE_MAP, mongoState } from '#app/config/db/mongo.condig';
+import {
+	REDIS_STATE_MAP,
+	rawRedis,
+	redisState,
+} from '#app/config/db/redis.config';
 import { type IAppService, appService } from './app.service';
 
 const createAppController = (service: IAppService) => ({
@@ -14,7 +20,20 @@ const createAppController = (service: IAppService) => ({
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			res.sendSuccess(httpStatus.OK, {}, 'server is up ...');
+			const mongoStatus = MONGO_STATE_MAP[mongoState];
+
+			res.sendSuccess(httpStatus.OK, {}, 'Health report', {
+				server: {
+					status: 'OK',
+				},
+				mongo: {
+					status: mongoStatus,
+				},
+				redis: {
+					clientStatus: REDIS_STATE_MAP[redisState],
+				},
+				timestamp: dayjs().toISOString(),
+			});
 		} catch (error) {
 			next(error);
 		}

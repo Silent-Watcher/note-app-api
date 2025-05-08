@@ -25,13 +25,6 @@ export const CONFIG = Object.freeze({
 		PORT: _env.MONGO_PORT,
 		USERNAME: _env.MONGO_USERNAME,
 		PASSWORD: _env.MONGO_PASSWORD,
-		STATE: mongoose.connection.readyState,
-		STATE_MAP: Object.freeze({
-			0: 'DISCONNECTED',
-			1: 'CONNECTED',
-			2: 'CONNECTING',
-			3: 'DISCONNECTING',
-		}),
 	}),
 
 	REDIS: Object.freeze({

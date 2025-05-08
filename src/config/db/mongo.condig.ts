@@ -5,6 +5,13 @@ import { CONFIG } from '#app/config';
 import CircuitBreaker from 'opossum';
 import { logger } from '#app/common/utils/logger.util';
 
+export const MONGO_STATE_MAP: Record<number, string> = {
+	0: 'DISCONNECTED',
+	1: 'CONNECTED',
+} as const;
+
+export let mongoState = 0;
+
 export const rawMongo: () => Promise<Mongoose> = (() => {
 	let connectionPromise: Promise<Mongoose> | null = null;
 	const MAX_RETRIES = 6;
@@ -44,13 +51,17 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 			connectionPromise = tryConnect();
 
 			mongoose.connection
-				.on('connected', () => logger.info('🌱 Mongoose connected'))
+				.on('connected', () => {
+					mongoState = 1;
+					logger.info('🌱 Mongoose connected');
+				})
 				.on('error', (err) =>
 					logger.error('❌ Mongoose connection error', err),
 				)
-				.on('disconnected', () =>
-					logger.warn('⚠️ Mongoose disconnected'),
-				);
+				.on('disconnected', () => {
+					mongoState = 0;
+					logger.warn('⚠️ Mongoose disconnected');
+				});
 		}
 		return connectionPromise;
 	};
@@ -63,7 +74,7 @@ async function execMongoCommand<T>(
 	command: () => Promise<T>,
 ): Promise<T | null> {
 	await rawMongo();
-	return CONFIG.DB.STATE === 1 ? command() : null;
+	return command();
 }
 
 //

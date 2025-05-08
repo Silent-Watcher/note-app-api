@@ -3,6 +3,13 @@ import CircuitBreaker from 'opossum';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '..';
 
+export const REDIS_STATE_MAP: Record<number, string> = {
+	0: 'DISCONNECTED',
+	1: 'CONNECTED',
+} as const;
+
+export let redisState = 0;
+
 export const rawRedis: () => Redis = (() => {
 	let client: Redis | null = null;
 	const MAX_RETRIES = 6;
@@ -32,10 +39,22 @@ export const rawRedis: () => Redis = (() => {
 				maxRetriesPerRequest: 1,
 			});
 
-			client.once('connect', () => logger.info('🌱 Redis connected'));
-			client.on('error', (err) =>
-				logger.error(`🚨 Redis error ${err.message}`),
-			);
+			client.once('connect', () => {
+				redisState = 1;
+				logger.info('🌱 Redis connected');
+			});
+
+			client.on('end', () => {
+				redisState = 0;
+			});
+
+			client.on('close', () => {
+				redisState = 0;
+			});
+
+			client.on('error', (err) => {
+				logger.error(`🚨 Redis error ${err.message}`);
+			});
 		}
 		return client;
 	};
