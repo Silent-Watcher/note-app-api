@@ -2,10 +2,9 @@ import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import type { Application } from 'express';
 import express from 'express';
-import { extractVersion } from '#app/common/middlewares/extractVersion';
-import { responseMiddleware } from '#app/common/middlewares/response';
-import { CONFIG } from '.';
-import { rawMongo } from './db/mongo.condig';
+import { extractVersion } from '#app/common/middlewares/global/extractVersion';
+import { responseMiddleware } from '#app/common/middlewares/global/response';
+import { CONFIG } from '#app/config';
 
 /**
  * Configure and attach all global middleware, view engine settings,

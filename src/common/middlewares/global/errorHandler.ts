@@ -1,7 +1,7 @@
 import type { Application, NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { CONFIG } from '#app/config';
-import { HttpError } from '../utils/http.util';
+import { HttpError } from '../../utils/http.util';
 
 const { DEBUG } = CONFIG;
 
