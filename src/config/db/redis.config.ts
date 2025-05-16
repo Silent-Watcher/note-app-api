@@ -9,6 +9,12 @@ export const REDIS_STATE_MAP: Record<number, string> = {
 	1: 'CONNECTED',
 } as const;
 
+/**
+ * The result of a Redis MULTI/EXEC call:
+ * ‑ An array of [error, result] tuples, or null if the transaction failed.
+ */
+export type MultiExecResult = [error: Error | null, result: unknown][] | null;
+
 export let redisState = 0;
 
 export const rawRedis: () => Redis = (() => {
@@ -72,6 +78,32 @@ async function execRedisCommand<T>(
 ): Promise<CommandResult<T>> {
 	try {
 		const client = rawRedis();
+
+		// ? bad code
+		// if (cmd === "multi") {
+		// 	const commands = args[0] as [keyof Redis, ...unknown[]][];
+		// 	const results = await client.multi(commands).exec();
+		// 	return { ok: true, data: results as T };
+		// }
+
+		if (cmd === 'multi') {
+			const commands = args[0] as [keyof Redis, ...unknown[]][];
+			if (!Array.isArray(commands)) {
+				throw new Error('Expected an array of Redis command tuples');
+			}
+
+			const multi = client.multi();
+			for (const [c, ...cArgs] of commands) {
+				// @ts-expect-error  // ioredis Multi interface is loosely typed
+				multi[c](...cArgs);
+			}
+			const results = await multi.exec();
+			return {
+				ok: true,
+				data: results as T,
+			};
+		}
+
 		const data = await (client[cmd] as (...args: unknown[]) => Promise<T>)(
 			...args,
 		);

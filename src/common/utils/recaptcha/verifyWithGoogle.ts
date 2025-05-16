@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
+import { isBlocked, recordFailure, resetFailures } from './recaptchaFraud';
 
 /**
  * Possible error codes returned by Google reCAPTCHA.
@@ -13,6 +14,7 @@ const zRecaptchaErrorCodes = z.enum([
 	'invalid-input-response',
 	'bad-request',
 	'timeout-or-duplicate',
+	'blocked-ip',
 ]);
 
 /**
@@ -39,6 +41,15 @@ export async function verifyWithGoolge(
 	token: string,
 	remoteip: string,
 ): Promise<GoogleCaptchaResponse> {
+	// Quick fail if this IP is already blocked
+	if (await isBlocked(remoteip)) {
+		logger.error(`[recaptcha][fraud] request from blocked IP ${remoteip}`);
+		return {
+			success: false,
+			'error-codes': ['blocked-ip'],
+		};
+	}
+
 	const params = new URLSearchParams({
 		secret: CONFIG.RECAPTCHA.SECRET_KEY,
 		response: token,
@@ -56,6 +67,8 @@ export async function verifyWithGoolge(
 		);
 		response = await res.json();
 	} catch (error) {
+		// Treat network errors as failures
+		recordFailure(remoteip);
 		logger.error(`[recaptcha] network error: ${error}`);
 		return {
 			success: false,
@@ -64,8 +77,9 @@ export async function verifyWithGoolge(
 
 	const parsedResponse = zGoogleCaptchaResponse.safeParse(response);
 	if (!parsedResponse.success) {
+		await recordFailure(remoteip);
 		logger.error(
-			`[recaptcha] invalid response format: ${fromZodError(
+			`[recaptcha] malformed response ${fromZodError(
 				parsedResponse.error,
 			).toString()}`,
 		);
@@ -76,10 +90,16 @@ export async function verifyWithGoolge(
 	}
 
 	if (!parsedResponse.data.success) {
+		await recordFailure(remoteip);
 		logger.warn(
 			'[recaptcha] verification failed:',
 			parsedResponse.data['error-codes'],
 		);
+	}
+
+	// Success → reset failure count
+	if (parsedResponse.data.success) {
+		await resetFailures(remoteip);
 	}
 
 	return {
