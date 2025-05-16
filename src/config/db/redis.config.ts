@@ -2,6 +2,7 @@ import Redis from 'ioredis';
 import CircuitBreaker from 'opossum';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '..';
+import type { CommandResult } from './global';
 
 export const REDIS_STATE_MAP: Record<number, string> = {
 	0: 'DISCONNECTED',
@@ -65,12 +66,19 @@ export const rawRedis: () => Redis = (() => {
  * @param cmd  — the Redis command name, e.g. "get", "set", "incr"
  * @param args — arguments for that command
  */
-async function execRedisCommand(
+async function execRedisCommand<T>(
 	cmd: keyof Redis,
 	...args: unknown[]
-): Promise<unknown> {
-	const client = rawRedis();
-	return (client[cmd] as (...args: unknown[]) => Promise<unknown>)(...args);
+): Promise<CommandResult<T>> {
+	try {
+		const client = rawRedis();
+		const data = await (client[cmd] as (...args: unknown[]) => Promise<T>)(
+			...args,
+		);
+		return { ok: true, data };
+	} catch (error) {
+		return { ok: false, reason: 'service-error' };
+	}
 }
 
 // Circuit breaker options

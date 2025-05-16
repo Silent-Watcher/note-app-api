@@ -3,7 +3,10 @@ import type { Mongoose } from 'mongoose';
 import { CONFIG } from '#app/config';
 
 import CircuitBreaker from 'opossum';
+import { httpStatus } from '#app/common/helpers/httpstatus';
+import { createHttpError } from '#app/common/utils/http.util';
 import { logger } from '#app/common/utils/logger.util';
+import type { CommandResult } from './global';
 
 export const MONGO_STATE_MAP: Record<number, string> = {
 	0: 'DISCONNECTED',
@@ -36,7 +39,7 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 					return conn;
 				} catch (error) {
 					if (attempts < MAX_RETRIES) {
-						const backoff = attempts * 1000;
+						const backoff = attempts * 100;
 						logger.warn(`⏱ Retrying in ${backoff}ms…`);
 						await new Promise((r) => setTimeout(r, backoff));
 						return tryConnect();
@@ -44,7 +47,12 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 					logger.error(
 						`🛑 MongoDB gave up after ${attempts} attempts`,
 					);
-					throw error;
+
+					throw createHttpError(httpStatus.INTERNAL_SERVER_ERROR, {
+						code: 'DATABASE_ERROR',
+						message:
+							'Database connection failed after maximum attempts',
+					});
 				}
 			};
 
@@ -69,12 +77,16 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 
 //
 // 2) execMongoCommand: unwraps a callback that runs your actual DB logic
-//
 async function execMongoCommand<T>(
 	command: () => Promise<T>,
-): Promise<T | null> {
-	await rawMongo();
-	return command();
+): Promise<CommandResult<T>> {
+	try {
+		await rawMongo();
+		const data = await command();
+		return { ok: true, data };
+	} catch (error) {
+		return { ok: false, reason: 'service-error' };
+	}
 }
 
 //
@@ -94,6 +106,8 @@ export const mongo = new CircuitBreaker(execMongoCommand, breakerOptions)
 		logger.error('🚨 Mongo command failed:', err.message),
 	)
 	.fallback(() => {
-		// you can return `null`, `[]`, or an empty object depending on operation
-		return null as unknown;
+		logger.warn(
+			'⚠️ Circuit fallback triggered — DB temporarily unavailable',
+		);
+		return { ok: false, reason: 'circuit-open' };
 	});

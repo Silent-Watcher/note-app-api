@@ -33,7 +33,9 @@ function handleExceptions(
 		if (err instanceof Error) {
 			res.sendError(
 				httpStatus.INTERNAL_SERVER_ERROR,
-				DEBUG ? err : { message: 'An Server Error Occured' },
+				DEBUG
+					? { message: err.message }
+					: { message: 'An Server Error Occured' },
 			);
 			return;
 		}

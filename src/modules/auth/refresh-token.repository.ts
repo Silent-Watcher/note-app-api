@@ -1,4 +1,5 @@
 import type { Types, UpdateResult } from 'mongoose';
+import { type CommandResult, unwrap } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo.condig';
 import { refreshTokenModel } from './refresh-token.model';
 import type { RefreshToken, RefreshTokenDocument } from './refresh-token.model';
@@ -30,22 +31,26 @@ export interface IRefreshTokenRepository {
  * }}
  */
 const createRefreshTokenRepository = () => ({
-	create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
-		return mongo.fire(() =>
-			refreshTokenModel.create(newRefreshToken),
-		) as Promise<RefreshTokenDocument>;
+	async create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
+		return unwrap(
+			(await mongo.fire(() =>
+				refreshTokenModel.create(newRefreshToken),
+			)) as CommandResult<RefreshTokenDocument>,
+		);
 	},
 
-	findOne(
+	async findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
 	): Promise<RefreshTokenDocument | null> {
-		return mongo.fire(() =>
-			refreshTokenModel.findOne({
-				user: userId,
-				hash: refreshToken,
-			}),
-		) as Promise<RefreshTokenDocument | null>;
+		return unwrap(
+			(await mongo.fire(() =>
+				refreshTokenModel.findOne({
+					user: userId,
+					hash: refreshToken,
+				}),
+			)) as CommandResult<RefreshTokenDocument | null>,
+		);
 	},
 
 	/**
@@ -54,15 +59,17 @@ const createRefreshTokenRepository = () => ({
 	 * @param {Types.ObjectId} user - The ObjectId of the user whose refresh tokens should be invalidated.
 	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the updateMany operation.
 	 */
-	invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
-		return mongo.fire(() =>
-			refreshTokenModel.updateMany(
-				{ user },
-				{
-					$set: { status: 'invalid' },
-				},
-			),
-		) as Promise<UpdateResult>;
+	async invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				refreshTokenModel.updateMany(
+					{ user },
+					{
+						$set: { status: 'invalid' },
+					},
+				),
+			)) as CommandResult<UpdateResult>,
+		);
 	},
 });
 

@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
 import type { NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { unwrap } from '#app/config/db/global';
 import { MONGO_STATE_MAP, mongoState } from '#app/config/db/mongo.condig';
 import {
 	REDIS_STATE_MAP,
 	rawRedis,
+	redis,
 	redisState,
 } from '#app/config/db/redis.config';
 import { type IAppService, appService } from './app.service';

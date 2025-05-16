@@ -5,6 +5,8 @@ import express from 'express';
 import { extractVersion } from '#app/common/middlewares/global/extractVersion';
 import { responseMiddleware } from '#app/common/middlewares/global/response';
 import { CONFIG } from '#app/config';
+import { rawMongo } from '#app/config/db/mongo.condig';
+import { rawRedis } from '#app/config/db/redis.config';
 
 /**
  * Configure and attach all global middleware, view engine settings,
@@ -36,4 +38,14 @@ export function configureMiddleware(app: Application) {
 	// cookies, versioning, etc.
 	app.use(cookieParser(CONFIG.SECRET.COOKIE));
 	app.use(extractVersion());
+
+	// app.use(async (req, res, next) => {
+	// 	try {
+	// 		await rawMongo();
+	// 		rawRedis();
+	// 		next();
+	// 	} catch (error) {
+	// 		next(error);
+	// 	}
+	// });
 }

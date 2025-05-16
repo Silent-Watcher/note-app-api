@@ -1,4 +1,5 @@
 import type { Types, UpdateResult } from 'mongoose';
+import { type CommandResult, unwrap } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo.condig';
 import type { CreateUserDto } from './dtos/create-user.dto';
 import { userModel } from './user.model';
@@ -8,6 +9,7 @@ import type { UserDocument } from './user.model';
  * Interface defining the user repository methods for database operations.
  */
 export interface IUserRepository {
+	// findOneByEmail(email: string): Promise<UserDocument | null>;
 	findOneByEmail(email: string): Promise<UserDocument | null>;
 	findById(id: Types.ObjectId): Promise<UserDocument | null>;
 	updatePassword(
@@ -26,41 +28,49 @@ export interface IUserRepository {
  * such as finding users by email or ID and creating new users.
  */
 const createUserRepository = () => ({
-	findOneByEmail(email: string): Promise<UserDocument | null> {
-		return mongo.fire(() =>
-			userModel.findOne({ email }),
-		) as Promise<UserDocument | null>;
+	async findOneByEmail(email: string): Promise<UserDocument | null> {
+		return unwrap(
+			(await mongo.fire(() =>
+				userModel.findOne({ email }),
+			)) as CommandResult<UserDocument | null>,
+		);
 	},
 
-	findById(id: Types.ObjectId): Promise<UserDocument | null> {
-		return mongo.fire(() =>
-			userModel.findById(id),
-		) as Promise<UserDocument | null>;
+	async findById(id: Types.ObjectId): Promise<UserDocument | null> {
+		return unwrap(
+			(await mongo.fire(() =>
+				userModel.findById(id),
+			)) as CommandResult<UserDocument | null>,
+		);
 	},
 
-	create(
+	async create(
 		createUserDto: Omit<CreateUserDto, 'confirmPassword'>,
 	): Promise<UserDocument> {
-		return mongo.fire(() =>
-			userModel.create({
-				email: createUserDto.email,
-				password: createUserDto.password,
-			}),
-		) as Promise<UserDocument>;
+		return unwrap(
+			(await mongo.fire(() =>
+				userModel.create({
+					email: createUserDto.email,
+					password: createUserDto.password,
+				}),
+			)) as CommandResult<UserDocument>,
+		);
 	},
 
-	updatePassword(
+	async updatePassword(
 		id: Types.ObjectId,
 		newPassword: string,
 	): Promise<UpdateResult> {
-		return mongo.fire(() =>
-			userModel.updateOne(
-				{ _id: id },
-				{
-					$set: { password: newPassword },
-				},
-			),
-		) as Promise<UpdateResult>;
+		return unwrap(
+			(await mongo.fire(() =>
+				userModel.updateOne(
+					{ _id: id },
+					{
+						$set: { password: newPassword },
+					},
+				),
+			)) as CommandResult<UpdateResult>,
+		);
 	},
 });
 
