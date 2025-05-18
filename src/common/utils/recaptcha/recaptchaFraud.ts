@@ -4,11 +4,10 @@ import type { MultiExecResult } from '#app/config/db/redis.config';
 import { redis } from '#app/config/db/redis.config';
 import { logger } from '../logger.util';
 
-// Configuration
-const FAILURE_PREFIX = 'recaptcha:fail:ip-'; // Redis key prefix
+const FAILURE_PREFIX = 'recaptcha:fail:ip-';
 const THRESHOLD = 5; // max allowed failures
 const WINDOW_SEC = 60 * 60; // rolling window for failures (1h)
-const BLOCK_PREFIX = 'recaptcha:block:ip-'; // Redis key for blocked IPs
+const BLOCK_PREFIX = 'recaptcha:block:ip-';
 const BLOCK_SEC = 60 * 60 * 24; // block duration (24h)
 
 /**
@@ -34,24 +33,6 @@ export async function recordFailure(ip: string): Promise<void> {
 	// if (count === 1) {
 	// 	await redis.fire("expire", failureKey, WINDOW_SEC);
 	// }
-
-	// const luaScript = `
-	// 	local count = redis.call("INCR", KEYS[1])
-	// 	if count == 1 then
-	// 		redis.call("EXPIRE", KEYS[1], ARGV[1])
-	// 	end
-	// 	return count
-	// `;
-
-	// const count = unwrap(
-	// 	await redis.fire(
-	// 		"eval",
-	// 		luaScript,
-	// 		1,
-	// 		failureKey,
-	// 		WINDOW_SEC.toString(),
-	// 	),
-	// ) as number;
 
 	const count = await safeIncrWithTTL(failureKey, WINDOW_SEC);
 
