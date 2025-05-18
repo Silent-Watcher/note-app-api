@@ -4,6 +4,7 @@ import { httpStatus } from '#app/common/helpers/httpstatus';
 import { verifyUser } from '#app/common/middlewares/verifyUser';
 import { configSwaggerV1 } from '#app/common/utils/swagger/swagger.util';
 import { CONFIG } from '#app/config';
+import { adminRouterV1 } from '#app/modules/admin/admin.routes';
 import { appController } from '#app/modules/app/app.controller';
 import { authRouterV1 } from '#app/modules/auth/auth.routes';
 
@@ -26,11 +27,9 @@ router.use('/auth', authRouterV1);
  */
 router.get('/', appController.renderIndexPageV1);
 
-router.get('/superman', verifyUser, (req, res, next) => {
-	res.send({
-		user: req.user,
-	});
-});
+// router.use("/superman", verifyUser, adminRouterV1);
+// ! remove as soon as you can!
+router.use('/superman', adminRouterV1);
 
 /**
  * Health check endpoint.
