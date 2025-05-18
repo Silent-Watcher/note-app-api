@@ -43,7 +43,7 @@ export const rawRedis: () => Redis = (() => {
 					return delay;
 				},
 				// Prevent endless per-command retries
-				maxRetriesPerRequest: 1,
+				maxRetriesPerRequest: null,
 			});
 
 			client.once('connect', () => {
