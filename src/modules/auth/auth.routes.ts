@@ -87,7 +87,7 @@ authRouterV1.post(
 authRouterV1.post(
 	'/forgot-password',
 	blockIfAuthenticated,
-	verifyCaptcha('forgot-pass'),
+	verifyCaptcha('forgotPass'),
 	validateBody(zForgotPasswordDto),
 	authController.requestPasswordResetV1,
 );
@@ -107,5 +107,7 @@ authRouterV1.post(
 	validateBody(zResetPasswordDto),
 	authController.resetPasswordV1,
 );
+
+authRouterV1.post('/verify-email', authController.verifyEmail);
 
 export { authRouterV1 };

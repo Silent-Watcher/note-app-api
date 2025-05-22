@@ -23,8 +23,8 @@ import type { IRefreshTokenRepository } from './refresh-token.repository';
 export interface IAuthService {
 	registerV1(createUserDto: CreateUserDto): Promise<{
 		newUser: UserDocument;
-		accessToken: string;
-		refreshToken: string;
+		// accessToken: string;
+		// refreshToken: string;
 	}>;
 
 	refreshTokensV1(refreshToken: string): Promise<{
@@ -68,8 +68,8 @@ const createAuthService = (
 	 */
 	async registerV1(createUserDto: CreateUserDto): Promise<{
 		newUser: UserDocument;
-		accessToken: string;
-		refreshToken: string;
+		// accessToken: string;
+		// refreshToken: string;
 	}> {
 		const { email, password } = createUserDto;
 
@@ -88,25 +88,29 @@ const createAuthService = (
 			password: hashedPassword,
 		});
 
-		const accessToken = jwt.sign(
-			{ userId: newUser._id },
-			CONFIG.SECRET.ACCESS_TOKEN,
-			{ expiresIn: '5m' },
-		);
+		// const accessToken = jwt.sign(
+		// 	{ userId: newUser._id },
+		// 	CONFIG.SECRET.ACCESS_TOKEN,
+		// 	{ expiresIn: '5m' },
+		// );
 
-		const refreshToken = jwt.sign(
-			{ userId: newUser._id },
-			CONFIG.SECRET.REFRESH_TOKEN,
-			{ expiresIn: '1d' },
-		);
+		// const refreshToken = jwt.sign(
+		// 	{ userId: newUser._id },
+		// 	CONFIG.SECRET.REFRESH_TOKEN,
+		// 	{ expiresIn: '1d' },
+		// );
 
-		await refreshTokenRepo.create({
-			hash: refreshToken,
-			rootIssuedAt: dayjs().toDate(),
-			user: newUser._id,
-		});
+		// await refreshTokenRepo.create({
+		// 	hash: refreshToken,
+		// 	rootIssuedAt: dayjs().toDate(),
+		// 	user: newUser._id,
+		// });
 
-		return { newUser, accessToken, refreshToken };
+		return {
+			newUser,
+			// accessToken,
+			// refreshToken
+		};
 	},
 
 	/**

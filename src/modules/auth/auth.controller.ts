@@ -34,27 +34,29 @@ const createAuthController = (service: IAuthService) => ({
 	): Promise<void> {
 		try {
 			const createUserDto = req.body as CreateUserDto;
-			const { newUser, accessToken, refreshToken } =
-				await service.registerV1(createUserDto);
+			const { newUser } = await service.registerV1(createUserDto);
 			const userObject = newUser.toObject();
 
-			res.cookie('refresh_token', refreshToken, {
-				httpOnly: true,
-				secure: !CONFIG.DEBUG,
-				sameSite: 'strict',
-				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/auth/refresh',
-			});
+			// res.cookie("refresh_token", refreshToken, {
+			// 	httpOnly: true,
+			// 	secure: !CONFIG.DEBUG,
+			// 	sameSite: "strict",
+			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+			// 	path: "/auth/refresh",
+			// });
 
-			req.user = newUser;
+			// req.user = newUser;
 
 			res.sendSuccess(
-				httpStatus.CREATED,
+				httpStatus.ACCEPTED,
 				{
-					accessToken,
+					// accessToken,
 					user: { _id: userObject._id, email: userObject.email },
 				},
 				'user registered successfully',
+				{
+					'action:next': 'verify user email',
+				},
 			);
 			return;
 		} catch (error) {
@@ -232,19 +234,34 @@ const createAuthController = (service: IAuthService) => ({
 
 			const resetPasswordUrl = `${CONFIG.CLIENT_BASE_URL}${CONFIG.ROUTE.RESET_PASSWORD}?token=${secureToken.hash}`;
 
-			await sendMail({
-				from: 'AI Note App 🧠💡',
-				to: email,
-				subject: 'Reset Your Password',
-				html: mailGenerator.generate(
-					generatePasswordResetEmailTemplate(resetPasswordUrl),
-				),
-			});
+			// ? bad code: takes a lot of time !
+			// await sendMail({
+			// 	from: "AI Note App 🧠💡",
+			// 	to: email,
+			// 	subject: "Reset Your Password",
+			// 	html: mailGenerator.generate(
+			// 		generatePasswordResetEmailTemplate(resetPasswordUrl),
+			// 	),
+			// });
+
+			// ? 2.5x faster!
+			// const job = await enqueueEmail({
+			// 	from: "AI Note App 🧠💡",
+			// 	to: email,
+			// 	subject: "Reset Your Password",
+			// 	html: mailGenerator.generate(
+			// 		generatePasswordResetEmailTemplate(resetPasswordUrl),
+			// 	),
+			// });
 
 			res.sendSuccess(
 				httpStatus.OK,
 				{},
 				'a password reset link has been sent.',
+				{
+					enqueued: true,
+					// jobId: job.id,
+				},
 			);
 		} catch (error) {
 			next(error);
@@ -288,6 +305,14 @@ const createAuthController = (service: IAuthService) => ({
 			res.redirect(
 				`${CONFIG.CLIENT_BASE_URL}${CONFIG.ROUTE.LOGIN_PAGE_ROUTE}`,
 			);
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async verifyEmail(req: Request, res: Response, next: NextFunction) {
+		try {
+			console.log('inside verify email controller ...');
 		} catch (error) {
 			next(error);
 		}
