@@ -1,7 +1,7 @@
 import type { Application, NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { CONFIG } from '#app/config';
-import { HttpError } from '../utils/http.util';
+import { HttpError } from '../../utils/http.util';
 
 const { DEBUG } = CONFIG;
 
@@ -24,7 +24,7 @@ function handleExceptions(
 	_req: Request,
 	res: Response,
 	next: NextFunction,
-) {
+): void {
 	if (err) {
 		if (err instanceof HttpError) {
 			res.sendError(err.status, err.error);
@@ -33,8 +33,11 @@ function handleExceptions(
 		if (err instanceof Error) {
 			res.sendError(
 				httpStatus.INTERNAL_SERVER_ERROR,
-				DEBUG ? err : { message: 'An Server Error Occured' },
+				DEBUG
+					? { message: err.message }
+					: { message: 'An Server Error Occured' },
 			);
+			return;
 		}
 	}
 	next();
@@ -49,11 +52,16 @@ function handleExceptions(
  * @param {Response} res - The Express response object, extended with `sendError`.
  * @param {NextFunction} _next - The next middleware function (unused in this handler).
  */
-function handleNotFoundError(req: Request, res: Response, _next: NextFunction) {
+function handleNotFoundError(
+	req: Request,
+	res: Response,
+	_next: NextFunction,
+): void {
 	res.sendError(httpStatus.NOT_FOUND, {
 		code: 'NOT FOUND',
 		message: `${req.method}:${req.path} not found`,
 	});
+	return;
 }
 
 /**
@@ -66,7 +74,7 @@ function handleNotFoundError(req: Request, res: Response, _next: NextFunction) {
  *
  * @param {Application} app - The Express application instance.
  */
-export function configureErrorHandler(app: Application) {
+export function configureErrorHandler(app: Application): void {
 	app.use(handleExceptions);
 	app.use(handleNotFoundError);
 }

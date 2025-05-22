@@ -10,6 +10,6 @@ describe('Health Check Endpoint', () => {
 			.expect(httpStatus.OK);
 
 		expect(response.body).toHaveProperty('code', httpStatus.OK);
-		expect(response.body).toHaveProperty('message', 'server is up ...');
+		expect(response.body.meta.server.status).toBe('OK');
 	});
 });

@@ -34,10 +34,10 @@ const createUserService = (repo: IUserRepository) => ({
 	findById(id: Types.ObjectId): Promise<UserDocument | null> {
 		return repo.findById(id);
 	},
-	findOneByEmail(email: string): Promise<UserDocument | null> {
+	async findOneByEmail(email: string): Promise<UserDocument | null> {
 		return repo.findOneByEmail(email);
 	},
-	create(
+	async create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
 	): Promise<UserDocument> {
 		return repo.create(createUserDto);

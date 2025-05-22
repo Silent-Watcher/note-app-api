@@ -38,6 +38,19 @@ const zEnv = z.object({
 		.min(1, { message: 'MONGO_PORT must be ≥ 1' })
 		.max(65535, { message: 'MONGO_PORT must be ≤ 65535' }),
 
+	REDIS_USERNAME: z
+		.string()
+		.nonempty({ message: 'REDIS_USERNAME is required' }),
+	REDIS_PASSWORD: z
+		.string()
+		.nonempty({ message: 'REDIS_PASSWORD is required' }),
+	REDIS_HOST: z.string().nonempty({ message: 'REDIS_HOST is required' }),
+	REDIS_PORT: z.coerce
+		.number()
+		.int({ message: 'REDIS_PORT must be an integer' })
+		.min(1, { message: 'REDIS_PORT must be ≥ 1' })
+		.max(65535, { message: 'REDIS_PORT must be ≤ 65535' }),
+
 	LOG_LEVEL: z.enum(logLevels, {
 		required_error: 'LOG_LEVEL is required',
 		invalid_type_error: `LOG_LEVEL must be one of ${logLevels.join('/')}`,

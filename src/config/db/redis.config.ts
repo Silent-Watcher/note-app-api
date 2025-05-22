@@ -1,0 +1,134 @@
+import Redis from 'ioredis';
+import CircuitBreaker from 'opossum';
+import { logger } from '#app/common/utils/logger.util';
+import { CONFIG } from '..';
+import type { CommandResult } from './global';
+
+export const REDIS_STATE_MAP: Record<number, string> = {
+	0: 'DISCONNECTED',
+	1: 'CONNECTED',
+} as const;
+
+/**
+ * The result of a Redis MULTI/EXEC call:
+ * ‑ An array of [error, result] tuples, or null if the transaction failed.
+ */
+export type MultiExecResult = [error: Error | null, result: unknown][] | null;
+
+export let redisState = 0;
+
+export const rawRedis: () => Redis = (() => {
+	let client: Redis | null = null;
+	const MAX_RETRIES = 6;
+	return () => {
+		if (!client) {
+			client = new Redis({
+				host: CONFIG.REDIS.HOST,
+				port: CONFIG.REDIS.PORT,
+				password: CONFIG.REDIS.PASSWORD,
+				username: CONFIG.REDIS.USERNAME,
+				tls: {},
+				retryStrategy(times) {
+					if (times > MAX_RETRIES) {
+						logger.error(
+							`🔌 Redis gave up after ${MAX_RETRIES}retries`,
+						);
+						return null; // stop retrying
+					}
+					// otherwise wait a bit before next retry
+					const delay = Math.min(times * 500, 3000);
+					logger.warn(
+						`🔁 Redis retry #${times}, delaying ${delay}ms`,
+					);
+					return delay;
+				},
+				// Prevent endless per-command retries
+				maxRetriesPerRequest: null,
+			});
+
+			client.once('connect', () => {
+				redisState = 1;
+				logger.info('🌱 Redis connected');
+			});
+
+			client.on('end', () => {
+				redisState = 0;
+			});
+
+			client.on('close', () => {
+				redisState = 0;
+			});
+
+			client.on('error', (err) => {
+				logger.error(`🚨 Redis error ${err.message}`);
+			});
+		}
+		return client;
+	};
+})();
+
+/**
+ * Execute an arbitrary Redis command.
+ * @param cmd  — the Redis command name, e.g. "get", "set", "incr"
+ * @param args — arguments for that command
+ */
+async function execRedisCommand<T>(
+	cmd: keyof Redis,
+	...args: unknown[]
+): Promise<CommandResult<T>> {
+	try {
+		const client = rawRedis();
+
+		// ? bad code
+		// if (cmd === "multi") {
+		// 	const commands = args[0] as [keyof Redis, ...unknown[]][];
+		// 	const results = await client.multi(commands).exec();
+		// 	return { ok: true, data: results as T };
+		// }
+
+		if (cmd === 'multi') {
+			const commands = args[0] as [keyof Redis, ...unknown[]][];
+			if (!Array.isArray(commands)) {
+				throw new Error('Expected an array of Redis command tuples');
+			}
+
+			const multi = client.multi();
+			for (const [c, ...cArgs] of commands) {
+				// @ts-expect-error  // ioredis Multi interface is loosely typed
+				multi[c](...cArgs);
+			}
+			const results = await multi.exec();
+			return {
+				ok: true,
+				data: results as T,
+			};
+		}
+
+		const data = await (client[cmd] as (...args: unknown[]) => Promise<T>)(
+			...args,
+		);
+		return { ok: true, data };
+	} catch (error) {
+		return { ok: false, reason: 'service-error' };
+	}
+}
+
+// Circuit breaker options
+const breakerOptions = {
+	timeout: 3000, // if a command takes > 3s, consider it a failure
+	errorThresholdPercentage: 50, // % of failures to open the circuit
+	resetTimeout: 30_000, // after 30s, try a command again (half-open)
+};
+
+/**
+ * A “simple” Redis façade over rawRedis, wrapped in a circuit breaker.
+ * Use this for your normal GET/SET/INCR calls in request handlers.
+ */
+export const redis = new CircuitBreaker(execRedisCommand, breakerOptions)
+	.on('open', () => logger.warn('🚧 Redis circuit OPEN - fallback triggered'))
+	.on('halfOpen', () => logger.info('🔄 Redis circuit HALF-OPEN'))
+	.on('close', () => logger.info('✅ Redis circuit CLOSED'))
+	.on('failure', (err) => {
+		logger.error(`🚨 Redis command failed ${err.message}`);
+	})
+	.fallback(() => null); // return null if circuit is open;

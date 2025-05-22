@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { description, name, version } from 'package.json';
 import { _env } from './env.config';
 
@@ -20,12 +21,17 @@ export const CONFIG = Object.freeze({
 	}),
 
 	DB: Object.freeze({
-		DEV: Object.freeze({
-			HOST: _env.MONGO_HOST,
-			PORT: _env.MONGO_PORT,
-			USERNAME: _env.MONGO_USERNAME,
-			PASSWORD: _env.MONGO_PASSWORD,
-		}),
+		HOST: _env.MONGO_HOST,
+		PORT: _env.MONGO_PORT,
+		USERNAME: _env.MONGO_USERNAME,
+		PASSWORD: _env.MONGO_PASSWORD,
+	}),
+
+	REDIS: Object.freeze({
+		HOST: _env.REDIS_HOST,
+		PORT: _env.REDIS_PORT,
+		USERNAME: _env.REDIS_USERNAME,
+		PASSWORD: _env.REDIS_PASSWORD,
 	}),
 
 	SECRET: Object.freeze({

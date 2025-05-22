@@ -1,7 +1,7 @@
 import express from 'express';
 import { router as apiRouter } from '#app/api/';
-import { configureErrorHandler } from '#app/common/middlewares/errorHandler';
-import { configureMiddleware } from '#app/config/middleware';
+import { configureMiddleware } from '#app/common/middlewares/global';
+import { configureErrorHandler } from '#app/common/middlewares/global/errorHandler';
 
 export const app = express();
 

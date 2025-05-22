@@ -1,4 +1,6 @@
 import type { Types, UpdateResult } from 'mongoose';
+import { type CommandResult, unwrap } from '#app/config/db/global';
+import { mongo } from '#app/config/db/mongo.condig';
 import { refreshTokenModel } from './refresh-token.model';
 import type { RefreshToken, RefreshTokenDocument } from './refresh-token.model';
 
@@ -13,7 +15,7 @@ export interface IRefreshTokenRepository {
 	findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
-	): Promise<RefreshTokenDocument>;
+	): Promise<RefreshTokenDocument | null>;
 
 	invalidateMany(user: Types.ObjectId): Promise<UpdateResult>;
 }
@@ -30,19 +32,25 @@ export interface IRefreshTokenRepository {
  */
 const createRefreshTokenRepository = () => ({
 	async create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
-		const result = await refreshTokenModel.create(newRefreshToken);
-		return result;
+		return unwrap(
+			(await mongo.fire(() =>
+				refreshTokenModel.create(newRefreshToken),
+			)) as CommandResult<RefreshTokenDocument>,
+		);
 	},
 
 	async findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
-	): Promise<RefreshTokenDocument> {
-		const result = await refreshTokenModel.findOne({
-			user: userId,
-			hash: refreshToken,
-		});
-		return result as RefreshTokenDocument;
+	): Promise<RefreshTokenDocument | null> {
+		return unwrap(
+			(await mongo.fire(() =>
+				refreshTokenModel.findOne({
+					user: userId,
+					hash: refreshToken,
+				}),
+			)) as CommandResult<RefreshTokenDocument | null>,
+		);
 	},
 
 	/**
@@ -52,13 +60,16 @@ const createRefreshTokenRepository = () => ({
 	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the updateMany operation.
 	 */
 	async invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
-		const result = await refreshTokenModel.updateMany(
-			{ user },
-			{
-				$set: { status: 'invalid' },
-			},
+		return unwrap(
+			(await mongo.fire(() =>
+				refreshTokenModel.updateMany(
+					{ user },
+					{
+						$set: { status: 'invalid' },
+					},
+				),
+			)) as CommandResult<UpdateResult>,
 		);
-		return result;
 	},
 });
 

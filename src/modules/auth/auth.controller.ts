@@ -6,6 +6,7 @@ import { sendMail } from '#app/common/utils/email';
 import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
+import { emailQueue, enqueueEmail } from '#app/queues/emailQueue';
 import type { IAuthService } from './auth.service';
 import { authService } from './auth.service';
 import type { ForgotPasswordDto } from './dtos/forgot-password.dto';
@@ -245,14 +246,14 @@ const createAuthController = (service: IAuthService) => ({
 			// });
 
 			// ? 2.5x faster!
-			// const job = await enqueueEmail({
-			// 	from: "AI Note App 🧠💡",
-			// 	to: email,
-			// 	subject: "Reset Your Password",
-			// 	html: mailGenerator.generate(
-			// 		generatePasswordResetEmailTemplate(resetPasswordUrl),
-			// 	),
-			// });
+			const job = await enqueueEmail({
+				from: 'AI Note App 🧠💡',
+				to: email,
+				subject: 'Reset Your Password',
+				html: mailGenerator.generate(
+					generatePasswordResetEmailTemplate(resetPasswordUrl),
+				),
+			});
 
 			res.sendSuccess(
 				httpStatus.OK,
@@ -260,7 +261,7 @@ const createAuthController = (service: IAuthService) => ({
 				'a password reset link has been sent.',
 				{
 					enqueued: true,
-					// jobId: job.id,
+					jobId: job.id,
 				},
 			);
 		} catch (error) {
