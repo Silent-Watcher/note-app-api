@@ -1,31 +1,35 @@
 import { compare, hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import { type Types, type UpdateResult, startSession } from 'mongoose';
+import mongoose, {
+	startSession,
+	type Types,
+	type UpdateResult,
+} from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { generateOtp } from '#app/common/helpers/otp';
 import { generateSecureResetPasswordToken } from '#app/common/helpers/resetPasswordToken';
 import { createHttpError } from '#app/common/utils/http.util';
+import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import { userService } from '#app/modules/users/user.service';
 import type { UserDocument } from '../users/user.model';
 import type { LoginUserDto } from './dtos/login-user.dto';
+import type { OtpDocument } from './models/otp.model';
+import { type IOtpRepository, otpRepository } from './repos/otp.repository';
 import {
 	type IPasswordResetRepository,
 	passwordResetRepository,
-} from './password-reset.repository';
-import { refreshTokenRepository } from './refresh-token.repository';
-import type { IRefreshTokenRepository } from './refresh-token.repository';
+} from './repos/password-reset.repository';
+import type { IRefreshTokenRepository } from './repos/refresh-token.repository';
+import { refreshTokenRepository } from './repos/refresh-token.repository';
 
 /**
  * Interface defining the authentication service methods.
  */
 export interface IAuthService {
-	registerV1(createUserDto: CreateUserDto): Promise<{
-		newUser: UserDocument;
-		// accessToken: string;
-		// refreshToken: string;
-	}>;
+	registerV1(createUserDto: CreateUserDto): Promise<UserDocument>;
 
 	refreshTokensV1(refreshToken: string): Promise<{
 		accessToken: string;
@@ -45,11 +49,26 @@ export interface IAuthService {
 	): Promise<{ raw: string; hash: string }>;
 
 	resetPasswordV1(token: string, password: string): Promise<UpdateResult>;
+
+	verifyEmail(
+		email: string,
+		code: string,
+	): Promise<{
+		user: UserDocument;
+		accessToken: string;
+		refreshToken: string;
+	}>;
+
+	createOtp(
+		type: 'email_verification',
+		userId: Types.ObjectId,
+	): Promise<OtpDocument>;
 }
 
 const createAuthService = (
 	refreshTokenRepo: IRefreshTokenRepository,
 	passwordResetRepo: IPasswordResetRepository,
+	otpRepo: IOtpRepository,
 ) => ({
 	/**
 	 * Registers a new user in the system.
@@ -66,11 +85,7 @@ const createAuthService = (
 	 * An object containing the newly created user document, a new access token, and a new refresh token.
 	 * @throws {HttpError} Throws 400 Bad Request if the email is already in use.
 	 */
-	async registerV1(createUserDto: CreateUserDto): Promise<{
-		newUser: UserDocument;
-		// accessToken: string;
-		// refreshToken: string;
-	}> {
+	async registerV1(createUserDto: CreateUserDto): Promise<UserDocument> {
 		const { email, password } = createUserDto;
 
 		const emailTaken = await userService.findOneByEmail(email);
@@ -88,29 +103,7 @@ const createAuthService = (
 			password: hashedPassword,
 		});
 
-		// const accessToken = jwt.sign(
-		// 	{ userId: newUser._id },
-		// 	CONFIG.SECRET.ACCESS_TOKEN,
-		// 	{ expiresIn: '5m' },
-		// );
-
-		// const refreshToken = jwt.sign(
-		// 	{ userId: newUser._id },
-		// 	CONFIG.SECRET.REFRESH_TOKEN,
-		// 	{ expiresIn: '1d' },
-		// );
-
-		// await refreshTokenRepo.create({
-		// 	hash: refreshToken,
-		// 	rootIssuedAt: dayjs().toDate(),
-		// 	user: newUser._id,
-		// });
-
-		return {
-			newUser,
-			// accessToken,
-			// refreshToken
-		};
+		return newUser;
 	},
 
 	/**
@@ -353,6 +346,116 @@ const createAuthService = (
 			throw error;
 		}
 	},
+
+	async verifyEmail(
+		email: string,
+		code: string,
+	): Promise<{
+		user: UserDocument;
+		accessToken: string;
+		refreshToken: string;
+	}> {
+		console.log('inside verify email');
+		const user = await userService.findOneByEmail(email);
+		console.log('user: ', user);
+
+		if (!user) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD_REQUEST',
+				message: 'invalid email',
+			});
+		}
+
+		if (user.isEmailVerified) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD_REQUEST',
+				message: 'email already verified',
+			});
+		}
+
+		// Check OTP
+		const otp = await otpRepo.getLatestUnusedVerifyEmailOtp(user._id);
+		console.log('otp: ', otp);
+
+		if (!otp || otp.code !== code) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD REQUEST',
+				message: 'Invalid or missing OTP.',
+			});
+		}
+
+		console.log(dayjs().toDate());
+		console.log(
+			'otp.expiresAt > dayjs().toDate(): ',
+			otp.expiresAt > dayjs().toDate(),
+		);
+		console.log(
+			'dayjs().isBefore(otp.expiresAt): ',
+			dayjs().isBefore(otp.expiresAt),
+		);
+		if (!dayjs().isBefore(otp.expiresAt)) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD REQUEST',
+				message: 'OTP has expired.',
+			});
+		}
+
+		// Mark verified
+		const session = await mongoose.startSession();
+		try {
+			session.startTransaction();
+
+			await user.updateOne({ isEmailVerified: true }, { session });
+			await otp.updateOne({ used: true }, { session });
+
+			const accessToken = jwt.sign(
+				{ userId: user._id },
+				CONFIG.SECRET.ACCESS_TOKEN,
+				{ expiresIn: '5m' },
+			);
+
+			const refreshToken = jwt.sign(
+				{ userId: user._id },
+				CONFIG.SECRET.REFRESH_TOKEN,
+				{ expiresIn: '1d' },
+			);
+
+			await refreshTokenRepo.create(
+				{
+					hash: refreshToken,
+					rootIssuedAt: dayjs().toDate(),
+					user: user._id,
+				},
+				session,
+			);
+
+			await session.commitTransaction();
+
+			return {
+				user,
+				accessToken,
+				refreshToken,
+			};
+		} catch (error) {
+			await session.abortTransaction();
+			logger.error(
+				`Transaction aborted due to: ${(error as Error)?.message}`,
+			);
+			throw createHttpError(httpStatus.INTERNAL_SERVER_ERROR, {
+				code: 'INTERNAL SERVER ERROR',
+				message: 'Transaction failed',
+			});
+		}
+	},
+
+	async createOtp(
+		type: 'email_verification',
+		userId: Types.ObjectId,
+	): Promise<OtpDocument> {
+		const code = generateOtp(5);
+		const otp = await otpRepo.create(type, code, userId);
+		return otp;
+	},
 });
 
 /**
@@ -364,4 +467,5 @@ const createAuthService = (
 export const authService = createAuthService(
 	refreshTokenRepository,
 	passwordResetRepository,
+	otpRepository,
 );

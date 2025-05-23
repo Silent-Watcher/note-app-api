@@ -2,16 +2,17 @@ import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { mailGenerator } from '#app/common/helpers/mailgen';
-import { sendMail } from '#app/common/utils/email';
 import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
+import { generateVerifyEmailTemplate } from '#app/common/utils/email/templates/verify-email.template';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
-import { emailQueue, enqueueEmail } from '#app/queues/emailQueue';
+import { enqueueEmail } from '#app/queues/emailQueue';
 import type { IAuthService } from './auth.service';
 import { authService } from './auth.service';
 import type { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import type { LoginUserDto } from './dtos/login-user.dto';
 import type { ResetPasswordDto } from './dtos/reset-password.dto';
+import type { VerifyEmailDto } from './dtos/verify-email.dto';
 
 const createAuthController = (service: IAuthService) => ({
 	/**
@@ -35,18 +36,23 @@ const createAuthController = (service: IAuthService) => ({
 	): Promise<void> {
 		try {
 			const createUserDto = req.body as CreateUserDto;
-			const { newUser } = await service.registerV1(createUserDto);
+			const newUser = await service.registerV1(createUserDto);
 			const userObject = newUser.toObject();
 
-			// res.cookie("refresh_token", refreshToken, {
-			// 	httpOnly: true,
-			// 	secure: !CONFIG.DEBUG,
-			// 	sameSite: "strict",
-			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-			// 	path: "/auth/refresh",
-			// });
+			const newOtp = await service.createOtp(
+				'email_verification',
+				userObject._id,
+			);
 
-			// req.user = newUser;
+			// send email verification otp
+			const job = await enqueueEmail({
+				from: 'AI Note App 🧠💡 <no-reply>',
+				to: userObject.email,
+				subject: 'Verify your email',
+				html: mailGenerator.generate(
+					generateVerifyEmailTemplate(newOtp.code),
+				),
+			});
 
 			res.sendSuccess(
 				httpStatus.ACCEPTED,
@@ -57,6 +63,10 @@ const createAuthController = (service: IAuthService) => ({
 				'user registered successfully',
 				{
 					'action:next': 'verify user email',
+					email: {
+						enqueued: true,
+						jobId: job.id,
+					},
 				},
 			);
 			return;
@@ -235,17 +245,6 @@ const createAuthController = (service: IAuthService) => ({
 
 			const resetPasswordUrl = `${CONFIG.CLIENT_BASE_URL}${CONFIG.ROUTE.RESET_PASSWORD}?token=${secureToken.hash}`;
 
-			// ? bad code: takes a lot of time !
-			// await sendMail({
-			// 	from: "AI Note App 🧠💡",
-			// 	to: email,
-			// 	subject: "Reset Your Password",
-			// 	html: mailGenerator.generate(
-			// 		generatePasswordResetEmailTemplate(resetPasswordUrl),
-			// 	),
-			// });
-
-			// ? 2.5x faster!
 			const job = await enqueueEmail({
 				from: 'AI Note App 🧠💡',
 				to: email,
@@ -260,8 +259,10 @@ const createAuthController = (service: IAuthService) => ({
 				{},
 				'a password reset link has been sent.',
 				{
-					enqueued: true,
-					jobId: job.id,
+					email: {
+						enqueued: true,
+						jobId: job.id,
+					},
 				},
 			);
 		} catch (error) {
@@ -313,7 +314,28 @@ const createAuthController = (service: IAuthService) => ({
 
 	async verifyEmail(req: Request, res: Response, next: NextFunction) {
 		try {
-			console.log('inside verify email controller ...');
+			const { email, code } = req.body as VerifyEmailDto;
+			const { user, accessToken, refreshToken } =
+				await service.verifyEmail(email, code);
+
+			res.cookie('refresh_token', refreshToken, {
+				httpOnly: true,
+				secure: !CONFIG.DEBUG,
+				sameSite: 'strict',
+				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+				path: '/auth/refresh',
+			});
+
+			req.user = user;
+
+			res.sendSuccess(
+				httpStatus.CREATED,
+				{
+					accessToken,
+					user: { _id: user._id, email: user.email },
+				},
+				'registeration process completed: email verified',
+			);
 		} catch (error) {
 			next(error);
 		}

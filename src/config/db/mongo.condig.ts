@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { Mongoose } from 'mongoose';
+import type { ConnectOptions, Mongoose } from 'mongoose';
 import { CONFIG } from '#app/config';
 
 import CircuitBreaker from 'opossum';
@@ -23,13 +23,15 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 		if (!connectionPromise) {
 			let attempts = 0;
 
-			const uri = `mongodb://${CONFIG.DB.HOST}:${CONFIG.DB.PORT}`;
-			const options = {
+			const uri = `mongodb://${CONFIG.DB.HOST}:${CONFIG.DB.PORT}/test`;
+			const options: ConnectOptions = {
 				serverSelectionTimeoutMS: 2000,
 				auth: {
 					username: CONFIG.DB.USERNAME,
 					password: CONFIG.DB.PASSWORD,
 				},
+				authSource: 'admin',
+				replicaSet: 'rs0',
 			};
 			const tryConnect = async (): Promise<Mongoose> => {
 				try {
@@ -85,6 +87,9 @@ async function execMongoCommand<T>(
 		const data = await command();
 		return { ok: true, data };
 	} catch (error) {
+		if (CONFIG.DEBUG) {
+			logger.error(`mongo error: ${error}`);
+		}
 		return { ok: false, reason: 'service-error' };
 	}
 }
