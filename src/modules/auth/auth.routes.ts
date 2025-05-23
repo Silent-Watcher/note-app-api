@@ -8,6 +8,7 @@ import { authController } from './auth.controller';
 import { zForgotPasswordDto } from './dtos/forgot-password.dto';
 import { zLoginUserDto } from './dtos/login-user.dto';
 import { zResetPasswordDto } from './dtos/reset-password.dto';
+import { zVerifyEmailDto } from './dtos/verify-email.dto';
 
 const authRouterV1 = Router();
 
@@ -24,8 +25,8 @@ const authRouterV1 = Router();
  */
 authRouterV1.post(
 	'/register',
-	blockIfAuthenticated,
-	verifyCaptcha('register'),
+	// blockIfAuthenticated,
+	// verifyCaptcha("register"),
 	validateBody(zCreateUserDto),
 	authController.registerV1,
 );
@@ -106,6 +107,12 @@ authRouterV1.post(
 	blockIfAuthenticated,
 	validateBody(zResetPasswordDto),
 	authController.resetPasswordV1,
+);
+
+authRouterV1.post(
+	'/verify-email',
+	validateBody(zVerifyEmailDto),
+	authController.verifyEmail,
 );
 
 export { authRouterV1 };

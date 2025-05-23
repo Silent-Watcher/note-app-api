@@ -1,8 +1,11 @@
-import type { Types, UpdateResult } from 'mongoose';
+import type { ClientSession, Types, UpdateResult } from 'mongoose';
 import { type CommandResult, unwrap } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo.condig';
-import { refreshTokenModel } from './refresh-token.model';
-import type { RefreshToken, RefreshTokenDocument } from './refresh-token.model';
+import type {
+	RefreshToken,
+	RefreshTokenDocument,
+} from '../models/refresh-token.model';
+import { refreshTokenModel } from '../models/refresh-token.model';
 
 /**
  * Interface defining the methods for interacting with refresh token documents in the database.
@@ -10,14 +13,19 @@ import type { RefreshToken, RefreshTokenDocument } from './refresh-token.model';
 export interface IRefreshTokenRepository {
 	create(
 		newRefreshToken: Partial<RefreshToken>,
+		session?: ClientSession,
 	): Promise<RefreshTokenDocument>;
 
 	findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
+		session?: ClientSession,
 	): Promise<RefreshTokenDocument | null>;
 
-	invalidateMany(user: Types.ObjectId): Promise<UpdateResult>;
+	invalidateMany(
+		user: Types.ObjectId,
+		session?: ClientSession,
+	): Promise<UpdateResult>;
 }
 
 /**
@@ -31,10 +39,13 @@ export interface IRefreshTokenRepository {
  * }}
  */
 const createRefreshTokenRepository = () => ({
-	async create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument> {
+	async create(
+		newRefreshToken: RefreshToken,
+		session?: ClientSession,
+	): Promise<RefreshTokenDocument> {
 		return unwrap(
 			(await mongo.fire(() =>
-				refreshTokenModel.create(newRefreshToken),
+				refreshTokenModel.create([{ ...newRefreshToken }], { session }),
 			)) as CommandResult<RefreshTokenDocument>,
 		);
 	},
@@ -42,13 +53,18 @@ const createRefreshTokenRepository = () => ({
 	async findOne(
 		refreshToken: string,
 		userId: Types.ObjectId,
+		session?: ClientSession,
 	): Promise<RefreshTokenDocument | null> {
 		return unwrap(
 			(await mongo.fire(() =>
-				refreshTokenModel.findOne({
-					user: userId,
-					hash: refreshToken,
-				}),
+				refreshTokenModel.findOne(
+					{
+						user: userId,
+						hash: refreshToken,
+					},
+					null,
+					{ session },
+				),
 			)) as CommandResult<RefreshTokenDocument | null>,
 		);
 	},
@@ -59,7 +75,10 @@ const createRefreshTokenRepository = () => ({
 	 * @param {Types.ObjectId} user - The ObjectId of the user whose refresh tokens should be invalidated.
 	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the updateMany operation.
 	 */
-	async invalidateMany(user: Types.ObjectId): Promise<UpdateResult> {
+	async invalidateMany(
+		user: Types.ObjectId,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
 		return unwrap(
 			(await mongo.fire(() =>
 				refreshTokenModel.updateMany(
@@ -67,6 +86,7 @@ const createRefreshTokenRepository = () => ({
 					{
 						$set: { status: 'invalid' },
 					},
+					{ session },
 				),
 			)) as CommandResult<UpdateResult>,
 		);

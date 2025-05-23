@@ -74,7 +74,7 @@ export function verifyUser(
 			if (err instanceof jwt.JsonWebTokenError) {
 				res.sendError(httpStatus.FORBIDDEN, {
 					code: 'FORBIDDEN',
-					message: 'invalid token!',
+					message: 'invalid credentials!',
 				});
 				return;
 			}
@@ -82,6 +82,14 @@ export function verifyUser(
 			const user = await userService.findById(
 				covertToObjectId((decoded as DecodedToken).userId),
 			);
+
+			if (!user) {
+				res.sendError(httpStatus.FORBIDDEN, {
+					code: 'FORBIDDEN',
+					message: 'invalid credentials!',
+				});
+				return;
+			}
 			req.user = user.toObject() as UserDocument;
 			next();
 		},
