@@ -31,3 +31,6 @@ process.env.CLIENT_BASE_URL = 'http://localhost:3000';
 process.env.RECAPTCHA_SECRET_KEY = 'dummy';
 process.env.RECAPTCHA_SITE_KEY = 'dummy';
 process.env.DEV_RECAPTCHA_AUTH = 'dummy';
+
+process.env.MONGO_DATABASE = 'test';
+process.env.MONGO_REPLICASET = 'rs0';

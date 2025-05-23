@@ -25,6 +25,8 @@ export const CONFIG = Object.freeze({
 		PORT: _env.MONGO_PORT,
 		USERNAME: _env.MONGO_USERNAME,
 		PASSWORD: _env.MONGO_PASSWORD,
+		REPLICASET: _env.MONGO_REPLICASET,
+		DB_NAME: _env.MONGO_DATABASE,
 	}),
 
 	REDIS: Object.freeze({

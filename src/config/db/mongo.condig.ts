@@ -23,7 +23,7 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 		if (!connectionPromise) {
 			let attempts = 0;
 
-			const uri = `mongodb://${CONFIG.DB.HOST}:${CONFIG.DB.PORT}/test`;
+			const uri = `mongodb://${CONFIG.DB.HOST}:${CONFIG.DB.PORT}/${CONFIG.DB.DB_NAME}`;
 			const options: ConnectOptions = {
 				serverSelectionTimeoutMS: 2000,
 				auth: {
@@ -31,7 +31,7 @@ export const rawMongo: () => Promise<Mongoose> = (() => {
 					password: CONFIG.DB.PASSWORD,
 				},
 				authSource: 'admin',
-				replicaSet: 'rs0',
+				replicaSet: CONFIG.DB.REPLICASET,
 			};
 			const tryConnect = async (): Promise<Mongoose> => {
 				try {

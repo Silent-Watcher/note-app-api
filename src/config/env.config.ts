@@ -38,6 +38,16 @@ const zEnv = z.object({
 		.min(1, { message: 'MONGO_PORT must be ≥ 1' })
 		.max(65535, { message: 'MONGO_PORT must be ≤ 65535' }),
 
+	MONGO_DATABASE: z
+		.string()
+		.nonempty({ message: 'MONGO_DATABASE is required' })
+		.default('test'),
+
+	MONGO_REPLICASET: z
+		.string()
+		.nonempty({ message: 'MONGO_REPLICASET is required' })
+		.default('rs0'),
+
 	REDIS_USERNAME: z
 		.string()
 		.nonempty({ message: 'REDIS_USERNAME is required' }),

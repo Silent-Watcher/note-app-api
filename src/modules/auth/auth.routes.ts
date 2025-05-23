@@ -25,8 +25,8 @@ const authRouterV1 = Router();
  */
 authRouterV1.post(
 	'/register',
-	// blockIfAuthenticated,
-	// verifyCaptcha("register"),
+	blockIfAuthenticated,
+	verifyCaptcha('register'),
 	validateBody(zCreateUserDto),
 	authController.registerV1,
 );
