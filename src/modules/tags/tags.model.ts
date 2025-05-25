@@ -3,8 +3,16 @@ import type { HydratedDocument, InferSchemaType } from 'mongoose';
 
 const tagSchema = new Schema(
 	{
-		name: { type: String, required: true, trim: true },
-		color: { type: String, required: true, trim: true },
+		name: {
+			type: String,
+			required: true,
+			trim: true,
+		},
+		color: {
+			type: String,
+			required: true,
+			trim: true,
+		},
 		parent: {
 			type: Types.ObjectId,
 			ref: 'tags',
@@ -17,7 +25,11 @@ const tagSchema = new Schema(
 			required: true,
 			default: undefined,
 		},
-		pinned: { type: Boolean, required: true, default: false },
+		pinned: {
+			type: Boolean,
+			required: true,
+			default: false,
+		},
 	},
 	{ timestamps: false, versionKey: false },
 );

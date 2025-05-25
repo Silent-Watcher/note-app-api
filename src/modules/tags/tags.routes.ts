@@ -10,4 +10,5 @@ tagsRouterV1.get('/', tagsController.getAll);
 tagsRouterV1.post('/', validateBody(zCreateTagDto), tagsController.create);
 
 tagsRouterV1.delete('/:id', tagsController.deleteOne);
+
 export { tagsRouterV1 };

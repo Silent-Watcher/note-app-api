@@ -54,13 +54,21 @@ const createUserRepository = () => ({
 
 	async create(
 		createUserDto: Omit<CreateUserDto, 'confirmPassword'>,
+		session?: ClientSession,
 	): Promise<UserDocument> {
 		return unwrap(
 			(await mongo.fire(() =>
-				userModel.create({
-					email: createUserDto.email,
-					password: createUserDto.password,
-				}),
+				// userModel.create([{
+				// email: createUserDto.email,
+				// password: createUserDto.password,
+				// }], { session })
+				{
+					const doc = new userModel({
+						email: createUserDto.email,
+						password: createUserDto.password,
+					});
+					return doc.save({ session });
+				},
 			)) as CommandResult<UserDocument>,
 		);
 	},

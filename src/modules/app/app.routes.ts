@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { verifyUser } from '#app/common/middlewares/verifyUser';
 import { authRouterV1 } from '../auth/auth.routes';
 import { tagsRouterV1 } from '../tags/tags.routes';
 import { appController } from './app.controller';
@@ -23,6 +24,6 @@ appRouterV1.get('/', appController.renderIndexPageV1);
  */
 appRouterV1.use('/auth', authRouterV1);
 
-appRouterV1.use('/tags', tagsRouterV1);
+appRouterV1.use('/tags', verifyUser, tagsRouterV1);
 
 export { appRouterV1 };

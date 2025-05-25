@@ -42,10 +42,12 @@ const createPasswordResetRepository = () => ({
 		return unwrap(
 			(await mongo.fire(() =>
 				passwordResetModel.create(
-					{
-						user,
-						tokenHash,
-					},
+					[
+						{
+							user,
+							tokenHash,
+						},
+					],
 					{ session },
 				),
 			)) as CommandResult<PasswordResetDocument>,

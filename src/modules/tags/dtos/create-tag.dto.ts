@@ -5,11 +5,19 @@ export const zCreateTagDto = z
 	.object({
 		name: z.string().trim().min(3, 'tag name should be at least 3 chars '),
 		color: z.string().trim().nonempty('color value required'),
-		parent: z.string(),
+		parent: z.string().optional(),
 	})
-	.refine((value) => mongoose.Types.ObjectId.isValid(value.parent), {
-		message: 'Invalid ObjectId string',
-		path: ['parent'], // attaches the error to confirmPassword
-	});
+	.refine(
+		(value) => {
+			if (value.parent) {
+				return mongoose.Types.ObjectId.isValid(value.parent as string);
+			}
+			return true;
+		},
+		{
+			message: 'Invalid ObjectId string',
+			path: ['parent'], // attaches the error to confirmPassword
+		},
+	);
 
 export type CreateTagDto = z.infer<typeof zCreateTagDto>;

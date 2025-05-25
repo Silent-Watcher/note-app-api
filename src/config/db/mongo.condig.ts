@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { ConnectOptions, Mongoose } from 'mongoose';
+import type { ConnectOptions, Mongoose, Types } from 'mongoose';
 import { CONFIG } from '#app/config';
 
 import CircuitBreaker from 'opossum';
@@ -14,6 +14,8 @@ export const MONGO_STATE_MAP: Record<number, string> = {
 } as const;
 
 export let mongoState = 0;
+
+export type ID = Types.ObjectId | string;
 
 export const rawMongo: () => Promise<Mongoose> = (() => {
 	let connectionPromise: Promise<Mongoose> | null = null;
@@ -116,3 +118,7 @@ export const mongo = new CircuitBreaker(execMongoCommand, breakerOptions)
 		);
 		return { ok: false, reason: 'circuit-open' };
 	});
+
+if (CONFIG.DEBUG) {
+	mongoose.set('debug', true);
+}

@@ -1,35 +1,46 @@
-import type { ClientSession, DeleteResult, Types } from 'mongoose';
-import type mongoose from 'mongoose';
-import { type CommandResult, unwrap } from '#app/config/db/global';
+import type {
+	ClientSession,
+	DeleteResult,
+	FilterQuery,
+	Types,
+	UpdateQuery,
+	UpdateResult,
+} from 'mongoose';
+import { unwrap } from '#app/config/db/global';
+import type { CommandResult } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo.condig';
-import type { CreateTagDto } from './dtos/create-tag.dto';
-import { type TagDocument, tagModel } from './tags.model';
+import type { ID } from '#app/config/db/mongo.condig';
+import { tagModel } from './tags.model';
+import type { TagDocument } from './tags.model';
 
 export interface ITagsRepository {
-	getAll(
-		userId: Types.ObjectId,
-		session?: ClientSession,
-	): Promise<TagDocument[] | []>;
-	existsParentWithId(
-		id: Types.ObjectId,
-		session?: ClientSession,
-	): Promise<boolean>;
-	deleteOne(
-		id: Types.ObjectId,
-		session?: ClientSession,
-	): Promise<DeleteResult>;
+	getAll(userId: ID, session?: ClientSession): Promise<TagDocument[] | []>;
+	existsParentWithId(id: ID, session?: ClientSession): Promise<boolean>;
+	deleteOne(id: ID, session?: ClientSession): Promise<DeleteResult>;
 	create(
 		name: string,
 		color: string,
-		parent: Types.ObjectId,
-		user: Types.ObjectId,
+		user: ID,
+		parent?: ID,
 		session?: ClientSession,
 	): Promise<TagDocument>;
+
+	updateOne(
+		id: ID,
+		update: UpdateQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult>;
+
+	updateMany(
+		filter: FilterQuery<TagDocument>,
+		update: UpdateQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult>;
 }
 
 const createTagsRepository = () => ({
 	async getAll(
-		userId: Types.ObjectId,
+		userId: ID,
 		session?: ClientSession,
 	): Promise<TagDocument[] | []> {
 		return unwrap(
@@ -40,7 +51,7 @@ const createTagsRepository = () => ({
 	},
 
 	async existsParentWithId(
-		id: Types.ObjectId,
+		id: ID,
 		session?: ClientSession,
 	): Promise<boolean> {
 		const foundedTag = await unwrap(
@@ -57,33 +68,62 @@ const createTagsRepository = () => ({
 	async create(
 		name: string,
 		color: string,
-		parent: Types.ObjectId,
-		user: Types.ObjectId,
+		user: ID,
+		parent?: ID,
 		session?: ClientSession,
 	): Promise<TagDocument> {
 		return unwrap(
 			(await mongo.fire(() =>
-				tagModel.create(
-					{
+				// tagModel.create(
+				// 	{
+				// user,
+				// ...(parent ? { parent } : {}),
+				// name,
+				// color,
+				// 	},
+				// )
+				{
+					const doc = new tagModel({
 						user,
-						parent,
+						...(parent ? { parent } : {}),
 						name,
 						color,
-					},
-					{ session },
-				),
+					});
+					return doc.save({ session });
+				},
 			)) as CommandResult<Promise<TagDocument>>,
 		);
 	},
 
-	async deleteOne(
-		id: Types.ObjectId,
-		session?: ClientSession,
-	): Promise<DeleteResult> {
+	async deleteOne(id: ID, session?: ClientSession): Promise<DeleteResult> {
 		return unwrap(
 			(await mongo.fire(() =>
 				tagModel.deleteOne({ _id: id }, { session }),
 			)) as CommandResult<Promise<DeleteResult>>,
+		);
+	},
+
+	async updateOne(
+		id: ID,
+		update: UpdateQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				tagModel.updateOne({ _id: id }, update, { session }),
+			)) as CommandResult<Promise<UpdateResult>>,
+		);
+	},
+
+	async updateMany(
+		filter: FilterQuery<TagDocument>,
+		update: UpdateQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				tagModel.updateMany(filter, update, { session }),
+			)) as CommandResult<Promise<UpdateResult>>,
 		);
 	},
 });
