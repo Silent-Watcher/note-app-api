@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import type { CreateTagDto } from './dtos/create-tag.dto';
@@ -26,14 +27,45 @@ const createTagsController = (service: ITagsService) => ({
 	): Promise<void> {
 		try {
 			const { name, color, parent } = req.body as CreateTagDto;
-			const newTag = await service.create(
-				name,
+			const newTag = await service.create({
 				color,
+				name,
 				parent,
-				req.user?._id as Types.ObjectId,
-			);
+				user: req.user?._id as Types.ObjectId,
+			});
 
 			res.sendSuccess(httpStatus.CREATED, { tag: newTag });
+			return;
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async deleteOne(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const id = req.params?.id;
+			if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+				res.sendError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'invalid tag id',
+				});
+			}
+			const { deletedCount } = await service.deleteOne(
+				new mongoose.Types.ObjectId(id),
+			);
+
+			if (!deletedCount) {
+				res.sendError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'tag not found',
+				});
+			}
+
+			res.sendSuccess(httpStatus.OK, {}, 'deleted successfully');
 			return;
 		} catch (error) {
 			next(error);

@@ -1,4 +1,4 @@
-import type { Types, UpdateResult } from 'mongoose';
+import type { ClientSession, Types, UpdateResult } from 'mongoose';
 import { type CommandResult, unwrap } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo.condig';
 import type { CreateUserDto } from './dtos/create-user.dto';
@@ -10,14 +10,22 @@ import type { UserDocument } from './user.model';
  */
 export interface IUserRepository {
 	// findOneByEmail(email: string): Promise<UserDocument | null>;
-	findOneByEmail(email: string): Promise<UserDocument | null>;
-	findById(id: Types.ObjectId): Promise<UserDocument | null>;
+	findOneByEmail(
+		email: string,
+		session?: ClientSession,
+	): Promise<UserDocument | null>;
+	findById(
+		id: Types.ObjectId,
+		session?: ClientSession,
+	): Promise<UserDocument | null>;
 	updatePassword(
 		id: Types.ObjectId,
 		newPassword: string,
+		session?: ClientSession,
 	): Promise<UpdateResult>;
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
+		session?: ClientSession,
 	): Promise<UserDocument>;
 }
 

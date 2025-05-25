@@ -1,16 +1,22 @@
-import type { Types } from 'mongoose';
+import type { ClientSession, DeleteResult, Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
-import type { TagDocument } from './tags.model';
+import type { CreateTagDto } from './dtos/create-tag.dto';
+import type { Tag, TagDocument } from './tags.model';
 import { type ITagsRepository, tagsRepository } from './tags.repository';
 
 export interface ITagsService {
-	getAll(userId: Types.ObjectId): Promise<TagDocument[] | []>;
+	getAll(
+		userId: Types.ObjectId,
+		session?: ClientSession,
+	): Promise<TagDocument[] | []>;
+	deleteOne(
+		id: Types.ObjectId,
+		session?: ClientSession,
+	): Promise<DeleteResult>;
 	create(
-		name: string,
-		color: string,
-		parent: Types.ObjectId,
-		user: Types.ObjectId,
+		newTag: CreateTagDto & { user: Types.ObjectId },
+		session?: ClientSession,
 	): Promise<TagDocument>;
 }
 
@@ -20,13 +26,13 @@ const createTagsService = (repo: ITagsRepository) => ({
 	},
 
 	async create(
-		name: string,
-		color: string,
-		parent: Types.ObjectId,
-		user: Types.ObjectId,
+		newTag: CreateTagDto & { user: Types.ObjectId },
+		session?: ClientSession,
 	): Promise<TagDocument> {
-		// check if we have a proper tag with this given parent id
-		const parentExists = await repo.existsWithId(parent);
+		const { name, color, parent, user } = newTag;
+		const parentExists = await repo.existsParentWithId(
+			parent as Types.ObjectId,
+		);
 
 		if (!parentExists) {
 			throw createHttpError(httpStatus.BAD_REQUEST, {
@@ -35,7 +41,19 @@ const createTagsService = (repo: ITagsRepository) => ({
 			});
 		}
 
-		return repo.create(name, color, parent, user);
+		return repo.create(
+			name,
+			color,
+			parent as Types.ObjectId,
+			user as Types.ObjectId,
+		);
+	},
+
+	deleteOne(
+		id: Types.ObjectId,
+		session?: ClientSession,
+	): Promise<DeleteResult> {
+		return repo.deleteOne(id);
 	},
 });
 
