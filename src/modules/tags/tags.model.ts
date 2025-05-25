@@ -5,8 +5,18 @@ const tagSchema = new Schema(
 	{
 		name: { type: String, required: true, trim: true },
 		color: { type: String, required: true, trim: true },
-		parent: { type: Types.ObjectId, ref: 'tags', default: undefined },
-		user: { type: Types.ObjectId, ref: 'users', default: undefined },
+		parent: {
+			type: Types.ObjectId,
+			ref: 'tags',
+			required: false,
+			default: undefined,
+		},
+		user: {
+			type: Types.ObjectId,
+			ref: 'users',
+			required: true,
+			default: undefined,
+		},
 		pinned: { type: Boolean, required: true, default: false },
 	},
 	{ timestamps: false, versionKey: false },
