@@ -9,13 +9,12 @@ import type {
 import { unwrap } from '#app/config/db/global';
 import type { CommandResult } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo.condig';
-import type { ID } from '#app/config/db/mongo.condig';
+import type { ExistsResult, ID } from '#app/config/db/types';
 import { tagModel } from './tags.model';
 import type { TagDocument } from './tags.model';
 
 export interface ITagsRepository {
 	getAll(userId: ID, session?: ClientSession): Promise<TagDocument[] | []>;
-	existsParentWithId(id: ID, session?: ClientSession): Promise<boolean>;
 	deleteOne(id: ID, session?: ClientSession): Promise<DeleteResult>;
 	create(
 		name: string,
@@ -36,6 +35,11 @@ export interface ITagsRepository {
 		update: UpdateQuery<TagDocument>,
 		session?: ClientSession,
 	): Promise<UpdateResult>;
+
+	isExists(
+		filter: FilterQuery<TagDocument>,
+		session?: ClientSession,
+	): ExistsResult;
 }
 
 const createTagsRepository = () => ({
@@ -50,21 +54,6 @@ const createTagsRepository = () => ({
 		);
 	},
 
-	async existsParentWithId(
-		id: ID,
-		session?: ClientSession,
-	): Promise<boolean> {
-		const foundedTag = await unwrap(
-			(await mongo.fire(() =>
-				tagModel
-					.exists({ _id: id, parent: { $exists: false } })
-					.session((session as ClientSession) ?? undefined),
-			)) as CommandResult<Promise<null | { _id: Types.ObjectId }>>,
-		);
-		// biome-ignore lint/complexity/noUselessTernary: we want to return boolean not {_id: ..}
-		return foundedTag?._id ? true : false;
-	},
-
 	async create(
 		name: string,
 		color: string,
@@ -73,25 +62,15 @@ const createTagsRepository = () => ({
 		session?: ClientSession,
 	): Promise<TagDocument> {
 		return unwrap(
-			(await mongo.fire(() =>
-				// tagModel.create(
-				// 	{
-				// user,
-				// ...(parent ? { parent } : {}),
-				// name,
-				// color,
-				// 	},
-				// )
-				{
-					const doc = new tagModel({
-						user,
-						...(parent ? { parent } : {}),
-						name,
-						color,
-					});
-					return doc.save({ session });
-				},
-			)) as CommandResult<Promise<TagDocument>>,
+			(await mongo.fire(() => {
+				const doc = new tagModel({
+					user,
+					...(parent ? { parent } : {}),
+					name,
+					color,
+				});
+				return doc.save({ session });
+			})) as CommandResult<Promise<TagDocument>>,
 		);
 	},
 
@@ -124,6 +103,17 @@ const createTagsRepository = () => ({
 			(await mongo.fire(() =>
 				tagModel.updateMany(filter, update, { session }),
 			)) as CommandResult<Promise<UpdateResult>>,
+		);
+	},
+
+	async isExists(
+		filter: FilterQuery<TagDocument>,
+		session?: ClientSession,
+	): ExistsResult {
+		return unwrap(
+			(await mongo.fire(() =>
+				tagModel.exists(filter).session(session as ClientSession),
+			)) as CommandResult<Promise<null | { _id: Types.ObjectId }>>,
 		);
 	},
 });

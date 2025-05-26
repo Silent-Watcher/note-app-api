@@ -15,8 +15,6 @@ export const MONGO_STATE_MAP: Record<number, string> = {
 
 export let mongoState = 0;
 
-export type ID = Types.ObjectId | string;
-
 export const rawMongo: () => Promise<Mongoose> = (() => {
 	let connectionPromise: Promise<Mongoose> | null = null;
 	const MAX_RETRIES = 6;

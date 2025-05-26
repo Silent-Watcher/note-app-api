@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import type { CreateTagDto } from './dtos/create-tag.dto';
+import type { Tag } from './tags.model';
 import { type ITagsService, tagsService } from './tags.service';
 
 const createTagsController = (service: ITagsService) => ({
@@ -47,16 +48,8 @@ const createTagsController = (service: ITagsService) => ({
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const id = req.params?.id;
-			if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-				res.sendError(httpStatus.BAD_REQUEST, {
-					code: 'BAD REQUEST',
-					message: 'invalid tag id',
-				});
-			}
-			const { deletedCount } = await service.deleteOne(
-				new mongoose.Types.ObjectId(id),
-			);
+			const id = req.params?.id as string;
+			const { deletedCount } = await service.deleteOne(id);
 
 			if (!deletedCount) {
 				res.sendError(httpStatus.BAD_REQUEST, {
@@ -67,6 +60,20 @@ const createTagsController = (service: ITagsService) => ({
 
 			res.sendSuccess(httpStatus.OK, {}, 'deleted successfully');
 			return;
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async updateOne(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const id = req.params.id as string;
+			const changes = req.body as Partial<Tag>;
+			const result = await service.updateOne(id, changes);
 		} catch (error) {
 			next(error);
 		}

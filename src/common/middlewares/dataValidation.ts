@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import type { ZodSchema } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { httpStatus } from '#app/common/helpers/httpstatus';
@@ -75,4 +76,20 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
 		const result = validate(schema, req.query, res);
 		result ? next() : undefined;
 	};
+}
+
+export function validateIdParam(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) {
+	const id = req.params.id;
+	if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+		res.sendError(httpStatus.BAD_REQUEST, {
+			code: 'BAD REQUEST',
+			message: 'invalid identifier',
+		});
+		return;
+	}
+	next();
 }

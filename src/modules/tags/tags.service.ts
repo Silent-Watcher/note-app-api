@@ -1,8 +1,8 @@
-import type { ClientSession, DeleteResult, Types } from 'mongoose';
+import type { DeleteResult, UpdateResult } from 'mongoose';
 import mongoose from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
-import type { ID } from '#app/config/db/mongo.condig';
+import type { ID } from '#app/config/db/types';
 import type { CreateTagDto } from './dtos/create-tag.dto';
 import type { Tag, TagDocument } from './tags.model';
 import { type ITagsRepository, tagsRepository } from './tags.repository';
@@ -11,6 +11,7 @@ export interface ITagsService {
 	getAll(userId: ID): Promise<TagDocument[] | []>;
 	deleteOne(id: ID): Promise<DeleteResult>;
 	create(newTag: CreateTagDto & { user: ID }): Promise<TagDocument>;
+	updateOne(id: ID, changes: Partial<Tag>): Promise<UpdateResult>;
 }
 
 const createTagsService = (repo: ITagsRepository) => ({
@@ -22,9 +23,12 @@ const createTagsService = (repo: ITagsRepository) => ({
 		const { name, color, parent, user } = newTag;
 
 		if (parent) {
-			const parentExists = await repo.existsParentWithId(parent);
+			const result = await repo.isExists({
+				_id: parent,
+				parent: { $exists: false },
+			});
 
-			if (!parentExists) {
+			if (!result) {
 				throw createHttpError(httpStatus.BAD_REQUEST, {
 					code: 'BAD REQUEST',
 					message: 'parent tag with given id not found',
@@ -53,6 +57,34 @@ const createTagsService = (repo: ITagsRepository) => ({
 				message: 'transaction failed',
 			});
 		}
+	},
+
+	async updateOne(id: ID, changes: Partial<Tag>): Promise<UpdateResult> {
+		if (changes?.name) {
+			const result = await repo.isExists({ _id: id, name: changes.name });
+			if (result) {
+				throw createHttpError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'This tag name already exists',
+				});
+			}
+		}
+
+		if (changes?.parent) {
+			const result = await repo.isExists({
+				_id: parent,
+				parent: { $exists: false },
+			});
+			if (!result) {
+				throw createHttpError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'parent tag not found',
+				});
+			}
+		}
+
+		// ! later validation for pinned status
+		return repo.updateOne(id, changes);
 	},
 });
 
