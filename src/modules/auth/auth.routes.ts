@@ -26,7 +26,8 @@ const authRouterV1 = Router();
 authRouterV1.post(
 	'/register',
 	blockIfAuthenticated,
-	verifyCaptcha('register'),
+	// ! TEMPORARY COMMENTED
+	// verifyCaptcha('register'),
 	validateBody(zCreateUserDto),
 	authController.registerV1,
 );
@@ -88,7 +89,8 @@ authRouterV1.post(
 authRouterV1.post(
 	'/forgot-password',
 	blockIfAuthenticated,
-	verifyCaptcha('forgotPass'),
+	// ! TEMPORARY COMMENTED
+	// verifyCaptcha('forgotPass'),
 	validateBody(zForgotPasswordDto),
 	authController.requestPasswordResetV1,
 );

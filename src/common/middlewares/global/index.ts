@@ -36,14 +36,4 @@ export function configureMiddleware(app: Application) {
 	// cookies, versioning, etc.
 	app.use(cookieParser(CONFIG.SECRET.COOKIE));
 	app.use(extractVersion());
-
-	// app.use(async (req, res, next) => {
-	// 	try {
-	// 		await rawMongo();
-	// 		rawRedis();
-	// 		next();
-	// 	} catch (error) {
-	// 		next(error);
-	// 	}
-	// });
 }

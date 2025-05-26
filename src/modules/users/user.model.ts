@@ -1,9 +1,5 @@
-import {
-	type HydratedDocument,
-	type InferSchemaType,
-	Schema,
-	model,
-} from 'mongoose';
+import { Schema, model } from 'mongoose';
+import type { HydratedDocument, InferSchemaType } from 'mongoose';
 
 const userSchema = new Schema(
 	{

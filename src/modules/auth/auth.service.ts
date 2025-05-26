@@ -355,9 +355,7 @@ const createAuthService = (
 		accessToken: string;
 		refreshToken: string;
 	}> {
-		console.log('inside verify email');
 		const user = await userService.findOneByEmail(email);
-		console.log('user: ', user);
 
 		if (!user) {
 			throw createHttpError(httpStatus.BAD_REQUEST, {
@@ -375,7 +373,6 @@ const createAuthService = (
 
 		// Check OTP
 		const otp = await otpRepo.getLatestUnusedVerifyEmailOtp(user._id);
-		console.log('otp: ', otp);
 
 		if (!otp || otp.code !== code) {
 			throw createHttpError(httpStatus.BAD_REQUEST, {
@@ -384,15 +381,6 @@ const createAuthService = (
 			});
 		}
 
-		console.log(dayjs().toDate());
-		console.log(
-			'otp.expiresAt > dayjs().toDate(): ',
-			otp.expiresAt > dayjs().toDate(),
-		);
-		console.log(
-			'dayjs().isBefore(otp.expiresAt): ',
-			dayjs().isBefore(otp.expiresAt),
-		);
 		if (!dayjs().isBefore(otp.expiresAt)) {
 			throw createHttpError(httpStatus.BAD_REQUEST, {
 				code: 'BAD REQUEST',

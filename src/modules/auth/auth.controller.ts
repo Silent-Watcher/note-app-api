@@ -1,9 +1,11 @@
+import type { Job } from 'bullmq';
 import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { mailGenerator } from '#app/common/helpers/mailgen';
 import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
 import { generateVerifyEmailTemplate } from '#app/common/utils/email/templates/verify-email.template';
+import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
 import { enqueueEmail } from '#app/queues/emailQueue';
@@ -37,22 +39,28 @@ const createAuthController = (service: IAuthService) => ({
 		try {
 			const createUserDto = req.body as CreateUserDto;
 			const newUser = await service.registerV1(createUserDto);
+			console.log('newUser: ', newUser);
 			const userObject = newUser.toObject();
+			console.log('userObject : ', userObject);
 
 			const newOtp = await service.createOtp(
 				'email_verification',
 				userObject._id,
 			);
 
-			// send email verification otp
-			const job = await enqueueEmail({
-				from: 'AI Note App 🧠💡 <no-reply>',
-				to: userObject.email,
-				subject: 'Verify your email',
-				html: mailGenerator.generate(
-					generateVerifyEmailTemplate(newOtp.code),
-				),
-			});
+			let job: Awaited<Promise<Job>> | null = null;
+			if (CONFIG.DEBUG) {
+				logger.info(`Email verification OTP: ${newOtp.code}`);
+			} else {
+				job = await enqueueEmail({
+					from: 'AI Note App 🧠💡 <no-reply>',
+					to: userObject.email,
+					subject: 'Verify your email',
+					html: mailGenerator.generate(
+						generateVerifyEmailTemplate(newOtp.code as string),
+					),
+				});
+			}
 
 			res.sendSuccess(
 				httpStatus.ACCEPTED,
@@ -63,10 +71,14 @@ const createAuthController = (service: IAuthService) => ({
 				'user registered successfully',
 				{
 					'action:next': 'verify user email',
-					email: {
-						enqueued: true,
-						jobId: job.id,
-					},
+					...(!CONFIG.DEBUG
+						? {
+								email: {
+									enqueued: true,
+									jobId: job?.id,
+								},
+							}
+						: {}),
 				},
 			);
 			return;
@@ -114,7 +126,7 @@ const createAuthController = (service: IAuthService) => ({
 				secure: !CONFIG.DEBUG,
 				sameSite: 'strict',
 				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/auth/refresh',
+				path: '/api/auth/refresh',
 			});
 
 			res.sendSuccess(
@@ -149,7 +161,7 @@ const createAuthController = (service: IAuthService) => ({
 		try {
 			await service.invalidateAllTokens(req.user?._id as Types.ObjectId);
 			req.user = undefined;
-			res.clearCookie('refresh_token', { path: '/auth/refreshs' });
+			res.clearCookie('refresh_token', { path: '/api/auth/refreshs' });
 			res.sendSuccess(
 				httpStatus.OK,
 				{},
@@ -196,7 +208,7 @@ const createAuthController = (service: IAuthService) => ({
 				sameSite: 'strict',
 				secure: !CONFIG.DEBUG,
 				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/auth/refresh',
+				path: '/api/auth/refresh',
 			});
 
 			req.user = user;
@@ -323,7 +335,7 @@ const createAuthController = (service: IAuthService) => ({
 				secure: !CONFIG.DEBUG,
 				sameSite: 'strict',
 				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/auth/refresh',
+				path: '/api/auth/refresh',
 			});
 
 			req.user = user;

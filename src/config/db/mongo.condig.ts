@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import type { ConnectOptions, Mongoose } from 'mongoose';
+import type { ConnectOptions, Mongoose, Types } from 'mongoose';
 import { CONFIG } from '#app/config';
 
 import CircuitBreaker from 'opossum';
@@ -116,3 +116,7 @@ export const mongo = new CircuitBreaker(execMongoCommand, breakerOptions)
 		);
 		return { ok: false, reason: 'circuit-open' };
 	});
+
+if (CONFIG.DEBUG) {
+	mongoose.set('debug', true);
+}
