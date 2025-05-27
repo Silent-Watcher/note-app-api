@@ -70,7 +70,7 @@ authRouterV1.get('/logout', verifyUser, authController.logoutV1);
 authRouterV1.post(
 	'/login',
 	blockIfAuthenticated,
-	verifyCaptcha('login'),
+	// verifyCaptcha('login'),
 	validateBody(zLoginUserDto),
 	authController.loginV1,
 );

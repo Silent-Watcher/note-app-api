@@ -1,5 +1,11 @@
 import { Schema, Types, model } from 'mongoose';
-import type { HydratedDocument, InferSchemaType } from 'mongoose';
+import type {
+	HydratedDocument,
+	InferSchemaType,
+	PaginateModel,
+} from 'mongoose';
+
+import mongoosePagiante from 'mongoose-paginate-v2';
 
 const noteSchema = new Schema(
 	{
@@ -39,6 +45,8 @@ const noteSchema = new Schema(
 	{ timestamps: true, versionKey: false },
 );
 
+noteSchema.plugin(mongoosePagiante);
+
 export type Note = InferSchemaType<typeof noteSchema>;
 export type NoteDocument = HydratedDocument<Note>;
-export const noteModel = model('note', noteSchema);
+export const noteModel = model('note', noteSchema) as PaginateModel<Note>;
