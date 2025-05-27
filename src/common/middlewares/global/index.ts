@@ -23,7 +23,7 @@ import { CONFIG } from '#app/config';
  */
 export function configureMiddleware(app: Application) {
 	// built-ins
-	app.use(express.json());
+	app.use(express.json({ limit: '100kb' })); // Limit Request Payloads to avoid DoS attacks via large payloads
 	app.use(express.urlencoded({ extended: false }));
 
 	app.use(responseMiddleware);
