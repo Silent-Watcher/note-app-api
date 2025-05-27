@@ -31,7 +31,9 @@ export function configureMiddleware(app: Application) {
 	// view engine / static
 	app.set('view engine', 'ejs');
 	app.set('views', path.join(process.cwd(), 'src', 'resources'));
-	app.use(express.static(path.join(process.cwd(), 'public')));
+	app.use(
+		express.static(path.join(process.cwd(), 'public'), { maxAge: '1d' }), // enable browsers to cache static files
+	);
 
 	// cookies, versioning, etc.
 	app.use(cookieParser(CONFIG.SECRET.COOKIE));
