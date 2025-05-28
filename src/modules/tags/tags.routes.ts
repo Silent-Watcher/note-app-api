@@ -2,7 +2,7 @@ import { Router } from 'express';
 import {
 	validateBody,
 	validateIdParam,
-} from '#app/common/middlewares/dataValidation';
+} from '#app/common/validation/dataValidation';
 import { zCreateTagDto } from './dtos/create-tag.dto';
 import { zUpdateTagDto } from './dtos/update-tag.dto';
 import { tagsController } from './tags.controller';

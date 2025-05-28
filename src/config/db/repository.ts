@@ -1,5 +1,6 @@
 import type {
 	ClientSession,
+	DeleteResult,
 	FilterQuery,
 	HydratedDocument,
 	// Model,
@@ -9,6 +10,8 @@ import type {
 	PopulateOptions,
 	ProjectionType,
 	SortOrder,
+	UpdateQuery,
+	UpdateResult,
 } from 'mongoose';
 import { type CommandResult, unwrap } from './global';
 import { mongo } from './mongo.condig';
@@ -87,7 +90,7 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 			sort: sort || undefined,
 			projection,
 			populate,
-			lean: false,
+			lean: true,
 			options: {
 				session,
 			},
@@ -98,5 +101,36 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 		)) as CommandResult<PaginateResult<Doc>>;
 
 		return unwrap(res);
+	},
+
+	async create(data: unknown, session?: ClientSession): Promise<Doc> {
+		const doc = new model(data);
+		const res = (await mongo.fire(() =>
+			doc.save({ session }),
+		)) as CommandResult<Promise<Doc>>;
+		return unwrap(res);
+	},
+
+	async updateOne(
+		filter: FilterQuery<Doc>,
+		changes: UpdateQuery<Doc>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model.updateOne(filter, changes, { session }).lean(),
+			)) as CommandResult<Promise<UpdateResult>>,
+		);
+	},
+
+	async deleteOne(
+		filter: FilterQuery<Doc>,
+		session?: ClientSession,
+	): Promise<DeleteResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model.deleteOne(filter, { session }).lean(),
+			)) as CommandResult<Promise<DeleteResult>>,
+		);
 	},
 });

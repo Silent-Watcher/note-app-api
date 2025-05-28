@@ -40,6 +40,11 @@ export interface ITagsRepository {
 		filter: FilterQuery<TagDocument>,
 		session?: ClientSession,
 	): ExistsResult;
+
+	countDocuments(
+		filter: FilterQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<number>;
 }
 
 const createTagsRepository = () => ({
@@ -114,6 +119,17 @@ const createTagsRepository = () => ({
 			(await mongo.fire(() =>
 				tagModel.exists(filter).session(session as ClientSession),
 			)) as CommandResult<Promise<null | { _id: Types.ObjectId }>>,
+		);
+	},
+
+	async countDocuments(
+		filter: FilterQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<number> {
+		return unwrap(
+			(await mongo.fire(() =>
+				tagModel.countDocuments(filter, { session }),
+			)) as CommandResult<Promise<number>>,
 		);
 	},
 });
