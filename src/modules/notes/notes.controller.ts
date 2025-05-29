@@ -16,9 +16,6 @@ const createNotesController = (service: INotesService) => ({
 		try {
 			const { page, pageSize } = req.query as NotesQuerySchema;
 
-			// delay for 4s
-			await new Promise((res) => setTimeout(res, 5000));
-
 			const notes = await service.getAll({
 				filter: { user: req.user?._id },
 				pagination: { page, pageSize },

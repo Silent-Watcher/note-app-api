@@ -22,7 +22,7 @@ export function cache(options: RedisSetOptions = { EX: 3000 }) {
 					return;
 				}
 				const key = requestToKey(req);
-				const cachedData = await readData(key);
+				const cachedData = await readData(key, true);
 
 				if (cachedData) {
 					let payload: unknown;
@@ -33,7 +33,7 @@ export function cache(options: RedisSetOptions = { EX: 3000 }) {
 					}
 					res.sendSuccess(
 						httpStatus.OK,
-						{ data: payload },
+						{ ...(payload as object) },
 						undefined,
 						{ source: 'cache' },
 					);
@@ -44,7 +44,12 @@ export function cache(options: RedisSetOptions = { EX: 3000 }) {
 
 				res.sendSuccess = (status, data, message, meta?) => {
 					if (status.toString().startsWith('2')) {
-						writeData(key, JSON.stringify(data), options).then();
+						writeData(
+							key,
+							JSON.stringify(data),
+							options,
+							true,
+						).then();
 					}
 					return originalSendSuccess(status, data, message, meta);
 				};

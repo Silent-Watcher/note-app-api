@@ -6,6 +6,7 @@ import { unwrap } from '#app/config/db/global';
 import type { CommandResult } from '#app/config/db/global';
 import { rawRedis, redis } from '#app/config/db/redis/redis.config';
 import type { RedisSetOptions } from '#app/config/db/redis/types';
+import { brotliCompressAsync, brotliDecompressAsync } from './compression';
 
 /**
  * Atomically increments `key` and, only on the first increment,
@@ -64,12 +65,23 @@ export async function writeData(
 	key: RedisKey,
 	data: string | Buffer | number,
 	options?: RedisSetOptions,
+	compress?: boolean,
 ) {
 	if (!isRedisWorking()) return;
 	try {
+		let payload: Buffer | string = '';
+		if (compress) {
+			payload =
+				typeof data === 'number' ? Buffer.from(data.toString()) : data;
+			const compressed = await brotliCompressAsync(payload);
+			payload = compressed.toString('hex');
+		} else {
+			payload = typeof data === 'number' ? data.toString() : data;
+		}
+
 		const args = [
 			key,
-			data,
+			payload,
 			...(options ? buildRedisSetArgs(options) : []),
 		];
 		return unwrap(await redis.fire('set', ...args));
@@ -78,13 +90,21 @@ export async function writeData(
 	}
 }
 
-export async function readData(key: RedisKey): Promise<unknown | undefined> {
+export async function readData(
+	key: RedisKey,
+	compress?: boolean,
+): Promise<unknown | undefined> {
 	if (!isRedisWorking()) return;
 
 	try {
 		const result = unwrap(
 			(await redis.fire('get', key)) as CommandResult<unknown>,
 		);
+		if (result && compress) {
+			const buffer = Buffer.from(result as string, 'hex');
+			const decompress = await brotliDecompressAsync(buffer);
+			return decompress.toString();
+		}
 		return result ?? undefined;
 	} catch (error) {
 		logger.error(`Redis read error: ${error}`);
