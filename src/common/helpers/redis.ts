@@ -1,6 +1,7 @@
+import { createHash } from 'node:crypto';
 import type { Request } from 'express';
+import stringify from 'fast-json-stable-stringify';
 import type { RedisKey } from 'ioredis';
-import hash from 'object-hash';
 import { logger } from '#app/common/utils/logger.util';
 import { unwrap } from '#app/config/db/global';
 import type { CommandResult } from '#app/config/db/global';
@@ -49,12 +50,18 @@ function buildRedisSetArgs(options: RedisSetOptions): (string | number)[] {
 
 export function requestToKey(req: Request): string {
 	const reqDataToHash = {
-		...(req?.body ? { body: req.body } : {}),
-		...(req?.query ? { query: req.query } : {}),
+		...(req?.query && Object.keys(req.query).length > 0
+			? { query: req.query }
+			: {}),
 		user: req?.user?._id.toString('hex'),
+		method: req.method,
 	};
 
-	return `${req.originalUrl}@${hash(reqDataToHash)}`;
+	const canonical = stringify(reqDataToHash);
+	const hash = createHash('sha256').update(canonical).digest('hex');
+	const cleanUrl = req.originalUrl.split('?')[0];
+
+	return `${cleanUrl}@${hash}`;
 }
 
 export function isRedisWorking() {
