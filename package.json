@@ -70,7 +70,7 @@
 		"ioredis": "^5.6.1",
 		"jsonwebtoken": "^9.0.2",
 		"mailgen": "^2.0.29",
-		"mongoose": "^8.13.2",
+		"mongoose": "^8.15.1",
 		"mongoose-paginate-v2": "^1.9.0",
 		"nodemailer": "^7.0.0",
 		"opossum": "^8.4.0",

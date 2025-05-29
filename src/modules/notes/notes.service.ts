@@ -1,6 +1,18 @@
-import type { PaginateResult } from 'mongoose';
+import type {
+	ClientSession,
+	FilterQuery,
+	PaginateResult,
+	Types,
+	UpdateQuery,
+	UpdateResult,
+} from 'mongoose';
+import type { DeleteResult } from 'mongoose';
+import { httpStatus } from '#app/common/helpers/httpstatus';
+import { createHttpError } from '#app/common/utils/http.util';
 import type { MongoQueryOptions } from '#app/config/db/repository';
 import type { ID } from '#app/config/db/types';
+import { tagsService } from '../tags/tags.service';
+import type { CreateNotesDto } from './dtos/create-note.dto';
 import type { Note, NoteDocument } from './notes.model';
 import type { INotesRepository } from './notes.repository';
 import { notesRepository } from './notes.repository';
@@ -9,6 +21,22 @@ export interface INotesService {
 	getAll(
 		queryOptions: MongoQueryOptions<Note, NoteDocument>,
 	): Promise<PaginateResult<NoteDocument>>;
+
+	create(
+		data: CreateNotesDto & { user: ID },
+		session?: ClientSession,
+	): Promise<NoteDocument>;
+
+	updateOne(
+		filter: FilterQuery<NoteDocument>,
+		changes: UpdateQuery<NoteDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult>;
+
+	deleteOne(
+		filter: FilterQuery<NoteDocument>,
+		session?: ClientSession,
+	): Promise<DeleteResult>;
 }
 
 const createNotesService = (repo: INotesRepository) => ({
@@ -16,6 +44,45 @@ const createNotesService = (repo: INotesRepository) => ({
 		queryOptions: MongoQueryOptions<Note, NoteDocument>,
 	): Promise<PaginateResult<NoteDocument>> {
 		return repo.getAll(queryOptions);
+	},
+
+	async create(
+		data: CreateNotesDto & { user: string | Types.ObjectId },
+		session?: ClientSession,
+	): Promise<NoteDocument> {
+		if (data.tags) {
+			const uniqueTags = [
+				...new Set(data.tags?.map((id) => id.toString())),
+			];
+			const foundCount = await tagsService.countDocuments({
+				_id: { $in: uniqueTags },
+			});
+			if (foundCount !== uniqueTags.length) {
+				throw createHttpError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'One or more tags do not exist.',
+				});
+			}
+			data.tags = uniqueTags;
+		}
+
+		return repo.create(data);
+	},
+
+	async updateOne(
+		filter: FilterQuery<NoteDocument>,
+		changes: UpdateQuery<NoteDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		// ! validation and checks!
+		return repo.updateOne(filter, changes);
+	},
+
+	deleteOne(
+		filter: FilterQuery<NoteDocument>,
+		session?: ClientSession,
+	): Promise<DeleteResult> {
+		return repo.deleteOne(filter);
 	},
 });
 

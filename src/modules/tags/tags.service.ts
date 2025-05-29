@@ -1,4 +1,9 @@
-import type { DeleteResult, UpdateResult } from 'mongoose';
+import type {
+	ClientSession,
+	DeleteResult,
+	FilterQuery,
+	UpdateResult,
+} from 'mongoose';
 import mongoose from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
@@ -12,6 +17,10 @@ export interface ITagsService {
 	deleteOne(id: ID): Promise<DeleteResult>;
 	create(newTag: CreateTagDto & { user: ID }): Promise<TagDocument>;
 	updateOne(id: ID, changes: Partial<Tag>): Promise<UpdateResult>;
+	countDocuments(
+		filter: FilterQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<number>;
 }
 
 const createTagsService = (repo: ITagsRepository) => ({
@@ -85,6 +94,13 @@ const createTagsService = (repo: ITagsRepository) => ({
 
 		// ! later validation for pinned status
 		return repo.updateOne(id, changes);
+	},
+
+	countDocuments(
+		filter: FilterQuery<TagDocument>,
+		session?: ClientSession,
+	): Promise<number> {
+		return repo.countDocuments(filter, session);
 	},
 });
 
