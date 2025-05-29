@@ -1,7 +1,7 @@
 import { safeIncrWithTTL } from '#app/common/helpers/redis';
 import { unwrap } from '#app/config/db/global';
-import type { MultiExecResult } from '#app/config/db/redis.config';
-import { redis } from '#app/config/db/redis.config';
+import type { MultiExecResult } from '#app/config/db/redis/redis.config';
+import { redis } from '#app/config/db/redis/redis.config';
 import { logger } from '../logger.util';
 
 const FAILURE_PREFIX = 'recaptcha:fail:ip-';

@@ -1,4 +1,4 @@
-import { createBaseRepository } from '#app/config/db/repository';
+import { createBaseRepository } from '#app/config/db/mongo/repository';
 import { type Note, type NoteDocument, noteModel } from './notes.model';
 
 export interface INotesRepository

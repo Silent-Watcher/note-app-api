@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { cache } from '#app/common/utils/cache/cache.util';
 import {
 	validateBody,
 	validateIdParam,
@@ -14,6 +15,7 @@ const notesRouterV1 = Router();
 notesRouterV1.get(
 	'/',
 	validateQuery(zNotesQuerySchema),
+	cache(),
 	notesController.getAll,
 );
 

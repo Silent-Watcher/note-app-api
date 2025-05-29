@@ -13,7 +13,7 @@ import type {
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
-import { type CommandResult, unwrap } from './global';
+import { type CommandResult, unwrap } from '../global';
 import { mongo } from './mongo.condig';
 
 interface PaginationOptions {

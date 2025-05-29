@@ -1,12 +1,12 @@
+import type { ConnectOptions, Mongoose } from 'mongoose';
 import mongoose from 'mongoose';
-import type { ConnectOptions, Mongoose, Types } from 'mongoose';
 import { CONFIG } from '#app/config';
 
 import CircuitBreaker from 'opossum';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
 import { logger } from '#app/common/utils/logger.util';
-import type { CommandResult } from './global';
+import type { CommandResult } from '../global';
 
 export const MONGO_STATE_MAP: Record<number, string> = {
 	0: 'DISCONNECTED',

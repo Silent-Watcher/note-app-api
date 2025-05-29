@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import type Mail from 'nodemailer/lib/mailer';
 import { sendMail } from '#app/common/utils/email';
 import { logger } from '#app/common/utils/logger.util';
-import { rawRedis } from '#app/config/db/redis.config';
+import { rawRedis } from '#app/config/db/redis/redis.config';
 
 export const emailWorker = new Worker<Mail.Options>(
 	'email',

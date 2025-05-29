@@ -1,8 +1,8 @@
 import Redis from 'ioredis';
 import CircuitBreaker from 'opossum';
 import { logger } from '#app/common/utils/logger.util';
-import { CONFIG } from '..';
-import type { CommandResult } from './global';
+import { CONFIG } from '../../index.ts';
+import type { CommandResult } from '../global.js';
 
 export const REDIS_STATE_MAP: Record<number, string> = {
 	0: 'DISCONNECTED',
