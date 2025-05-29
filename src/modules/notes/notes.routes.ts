@@ -19,13 +19,10 @@ notesRouterV1.get(
 
 notesRouterV1.post('/', validateBody(zCreateNotesDto), notesController.create);
 
-notesRouterV1.put(
-	'/:id',
-	validateIdParam,
-	validateBody(zUpdateNotesDto),
-	notesController.updateOne,
-);
-
-notesRouterV1.delete('/:id', validateIdParam, notesController.deleteOne);
+notesRouterV1
+	.route('/:id')
+	.all(validateIdParam)
+	.delete(notesController.deleteOne)
+	.put(validateBody(zUpdateNotesDto), notesController.updateOne);
 
 export { notesRouterV1 };
