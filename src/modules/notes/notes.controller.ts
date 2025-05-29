@@ -18,7 +18,7 @@ const createNotesController = (service: INotesService) => ({
 
 			const notes = await service.getAll({
 				filter: { user: req.user?._id },
-				pagination: { page, pageSize },
+				...(page && pageSize ? { pagination: { page, pageSize } } : {}),
 				projection: { title: 1, body: 1 },
 			});
 
