@@ -7,7 +7,7 @@ import type {
 import mongoose from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
-import type { ID } from '#app/config/db/types';
+import type { ID } from '#app/config/db/mongo/types';
 import type { CreateTagDto } from './dtos/create-tag.dto';
 import type { Tag, TagDocument } from './tags.model';
 import { type ITagsRepository, tagsRepository } from './tags.repository';

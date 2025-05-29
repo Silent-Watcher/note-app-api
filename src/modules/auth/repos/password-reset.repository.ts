@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import type { ClientSession, Types } from 'mongoose';
 import { type CommandResult, unwrap } from '#app/config/db/global';
-import { mongo } from '#app/config/db/mongo.condig';
+import { mongo } from '#app/config/db/mongo/mongo.condig';
 import {
 	type PasswordResetDocument,
 	passwordResetModel,

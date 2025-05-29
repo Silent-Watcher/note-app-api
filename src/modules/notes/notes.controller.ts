@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import type { ID } from '#app/config/db/types';
+import type { ID } from '#app/config/db/mongo/types';
 import type { CreateNotesDto } from './dtos/create-note.dto';
 import type { UpdateNotesDto } from './dtos/update-note-dto';
 import type { NotesQuerySchema } from './notes.query';
@@ -15,6 +15,9 @@ const createNotesController = (service: INotesService) => ({
 	): Promise<void> {
 		try {
 			const { page, pageSize } = req.query as NotesQuerySchema;
+
+			// delay for 4s
+			await new Promise((res) => setTimeout(res, 5000));
 
 			const notes = await service.getAll({
 				filter: { user: req.user?._id },

@@ -39,9 +39,7 @@ const createAuthController = (service: IAuthService) => ({
 		try {
 			const createUserDto = req.body as CreateUserDto;
 			const newUser = await service.registerV1(createUserDto);
-			console.log('newUser: ', newUser);
 			const userObject = newUser.toObject();
-			console.log('userObject : ', userObject);
 
 			const newOtp = await service.createOtp(
 				'email_verification',

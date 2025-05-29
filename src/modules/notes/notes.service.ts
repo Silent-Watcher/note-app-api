@@ -1,16 +1,16 @@
 import type {
 	ClientSession,
+	DeleteResult,
 	FilterQuery,
 	PaginateResult,
 	Types,
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
-import type { DeleteResult } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
-import type { MongoQueryOptions } from '#app/config/db/repository';
-import type { ID } from '#app/config/db/types';
+import type { MongoQueryOptions } from '#app/config/db/mongo/repository';
+import type { ID } from '#app/config/db/mongo/types';
 import { tagsService } from '../tags/tags.service';
 import type { CreateNotesDto } from './dtos/create-note.dto';
 import type { Note, NoteDocument } from './notes.model';

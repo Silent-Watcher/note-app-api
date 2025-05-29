@@ -6,12 +6,12 @@ import type {
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
-import { unwrap } from '#app/config/db/global';
 import type { CommandResult } from '#app/config/db/global';
-import { mongo } from '#app/config/db/mongo.condig';
-import type { ExistsResult, ID } from '#app/config/db/types';
-import { tagModel } from './tags.model';
+import { unwrap } from '#app/config/db/global';
+import { mongo } from '#app/config/db/mongo/mongo.condig';
+import type { ExistsResult, ID } from '#app/config/db/mongo/types';
 import type { TagDocument } from './tags.model';
+import { tagModel } from './tags.model';
 
 export interface ITagsRepository {
 	getAll(userId: ID, session?: ClientSession): Promise<TagDocument[] | []>;

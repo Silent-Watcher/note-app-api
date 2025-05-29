@@ -1,6 +1,6 @@
-import { Queue } from 'bullmq';
 import type { QueueOptions } from 'bullmq';
-import { rawRedis } from '#app/config/db/redis.config';
+import { Queue } from 'bullmq';
+import { rawRedis } from '#app/config/db/redis/redis.config';
 
 const queues = new Map();
 

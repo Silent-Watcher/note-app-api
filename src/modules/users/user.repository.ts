@@ -1,9 +1,9 @@
 import type { ClientSession, Types, UpdateResult } from 'mongoose';
 import { type CommandResult, unwrap } from '#app/config/db/global';
-import { mongo } from '#app/config/db/mongo.condig';
+import { mongo } from '#app/config/db/mongo/mongo.condig';
 import type { CreateUserDto } from './dtos/create-user.dto';
-import { userModel } from './user.model';
 import type { UserDocument } from './user.model';
+import { userModel } from './user.model';
 
 /**
  * Interface defining the user repository methods for database operations.
