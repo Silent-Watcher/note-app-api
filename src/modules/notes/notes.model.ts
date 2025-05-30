@@ -11,13 +11,13 @@ const noteSchema = new Schema(
 	{
 		user: {
 			type: Types.ObjectId,
-			ref: 'users',
+			ref: 'user',
 			required: true,
 			default: undefined,
 		},
 		tags: {
 			type: [Types.ObjectId],
-			ref: 'tags',
+			ref: 'tag',
 			required: true,
 			default: [],
 		},
@@ -42,7 +42,12 @@ const noteSchema = new Schema(
 			default: false,
 		},
 	},
-	{ timestamps: true, versionKey: false },
+	{
+		timestamps: true,
+		versionKey: false,
+		toJSON: { virtuals: true },
+		toObject: { virtuals: true },
+	},
 );
 
 noteSchema.plugin(mongoosePagiante);

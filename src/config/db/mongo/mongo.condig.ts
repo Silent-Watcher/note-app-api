@@ -117,6 +117,6 @@ export const mongo = new CircuitBreaker(execMongoCommand, breakerOptions)
 		return { ok: false, reason: 'circuit-open' };
 	});
 
-if (CONFIG.DEBUG) {
-	mongoose.set('debug', true);
-}
+// if (CONFIG.DEBUG) {
+// 	mongoose.set('debug', true);
+// }
