@@ -24,7 +24,9 @@ interface PaginationOptions {
 /** Sort by any key in your schema T */
 type SortBy<T> =
 	/** { field1?: 1|-1; field2?: 1|-1; … } */
-	| Partial<Record<Extract<keyof T, string>, SortOrder>>
+	| (Partial<Record<Extract<keyof T, string>, SortOrder>> & {
+			score?: { $meta: 'textScore' };
+	  })
 	/** or array-of-tuples: [ ["field1", 1], ["field2", -1], … ] */
 	| [Extract<keyof T, string>, SortOrder][];
 

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { normalizeSearch } from '#app/common/helpers/query/normalizeSearch';
 import { verifyUser } from '#app/common/middlewares/verifyUser';
 import { authRouterV1 } from '../auth/auth.routes';
 import { notesRouterV1 } from '../notes/notes.routes';

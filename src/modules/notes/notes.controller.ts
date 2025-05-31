@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import { normalizeSort } from '#app/common/helpers/normalizeSort';
+import { normalizeSearch } from '#app/common/helpers/query/normalizeSearch';
+import { normalizeSort } from '#app/common/helpers/query/normalizeSort';
 import type { ID } from '#app/config/db/mongo/types';
 import type { CreateNotesDto } from './dtos/create-note.dto';
 import type { UpdateNotesDto } from './dtos/update-note-dto';
@@ -15,12 +16,30 @@ const createNotesController = (service: INotesService) => ({
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const { page, pageSize, sort } = req.query as NotesQuerySchema;
+			const { page, pageSize, sort, search } =
+				req.query as NotesQuerySchema;
 
 			const notes = await service.getAll({
-				filter: { user: req.user?._id },
+				filter: {
+					user: req.user?._id,
+					...(search
+						? { $text: { $search: normalizeSearch(search) } }
+						: {}),
+				},
+				projection: {
+					...(search ? { score: { $meta: 'textScore' } } : {}),
+				},
 				...(page && pageSize ? { pagination: { page, pageSize } } : {}),
-				...(sort ? { sort: normalizeSort(sort) } : {}),
+				...(sort
+					? {
+							sort: {
+								...(search
+									? { score: { $meta: 'textScore' } }
+									: {}),
+								...normalizeSort(sort),
+							},
+						}
+					: {}),
 			});
 
 			res.sendSuccess(httpStatus.OK, { notes });

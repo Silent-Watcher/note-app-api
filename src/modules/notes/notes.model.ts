@@ -50,6 +50,7 @@ const noteSchema = new Schema(
 	},
 );
 
+noteSchema.index({ title: 'text', body: 'text' });
 noteSchema.plugin(mongoosePagiante);
 
 export type Note = InferSchemaType<typeof noteSchema>;
