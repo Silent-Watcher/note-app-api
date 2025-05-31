@@ -39,7 +39,9 @@ export interface MongoQueryOptions<T, Doc extends HydratedDocument<T>> {
 	/** any Mongoose‐style filter on T’s fields */
 	filter?: FilterQuery<Doc>;
 	/** include/exclude fields of T */
-	projection?: ProjectionType<Doc>;
+	projection?: ProjectionType<Doc> & {
+		score?: { $meta: 'textScore' };
+	};
 	/** page/size */
 	pagination?: PaginationOptions;
 	/** sort by fields of T */
@@ -48,7 +50,7 @@ export interface MongoQueryOptions<T, Doc extends HydratedDocument<T>> {
 	session?: ClientSession;
 	/** optional populate */
 	populate?: PopulateOptions | PopulateOptions[];
-	// search?: string
+	search?: string;
 	// useCursor?: boolean
 	// aggPipeline?: PipelineStage[]
 }
@@ -64,12 +66,21 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 		const {
 			filter = {} as F,
 			pagination: { page = 1, pageSize = 10 } = {},
-			projection,
+			projection = {},
 			populate,
-			sort,
+			sort = {} as SortBy<T>,
 			session,
+			search,
 		} = opts;
 
+		if (search) {
+			console.log('aaa');
+			filter.$text = { $search: search };
+			projection.score = { $meta: 'textScore' };
+			if (!Array.isArray(sort)) sort.score = { $meta: 'textScore' };
+		}
+
+		// ? in case you don't use mongoose paginate v2
 		// let query = model.find(filter, projection ?? null, { session });
 
 		// query.skip(page * pageSize).limit(pageSize);

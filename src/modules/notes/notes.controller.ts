@@ -22,24 +22,12 @@ const createNotesController = (service: INotesService) => ({
 			const notes = await service.getAll({
 				filter: {
 					user: req.user?._id,
-					...(search
-						? { $text: { $search: normalizeSearch(search) } }
-						: {}),
 				},
-				projection: {
-					...(search ? { score: { $meta: 'textScore' } } : {}),
-				},
-				...(page && pageSize ? { pagination: { page, pageSize } } : {}),
-				...(sort
-					? {
-							sort: {
-								...(search
-									? { score: { $meta: 'textScore' } }
-									: {}),
-								...normalizeSort(sort),
-							},
-						}
+				...(search
+					? { search: normalizeSearch(search as string) }
 					: {}),
+				...(page && pageSize ? { pagination: { page, pageSize } } : {}),
+				...(sort ? { sort: { ...normalizeSort(sort) } } : {}),
 			});
 
 			res.sendSuccess(httpStatus.OK, { notes });
