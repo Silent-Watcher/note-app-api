@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { mailGenerator } from '#app/common/helpers/mailgen';
+import { isIpBlocked } from '#app/common/helpers/redis';
 import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
 import { generateVerifyEmailTemplate } from '#app/common/utils/email/templates/verify-email.template';
 import { logger } from '#app/common/utils/logger.util';
@@ -196,9 +197,22 @@ const createAuthController = (service: IAuthService) => ({
 		next: NextFunction,
 	): Promise<void> {
 		try {
+			if (await isIpBlocked(req.ip as string, 'login:block:ip')) {
+				logger.error(
+					`[login][fraud] request from blocked IP ${req.ip}`,
+				);
+				res.sendError(httpStatus.FORBIDDEN, {
+					code: 'FORBIDDEN',
+					message: 'you have been blocked for 24 hours',
+				});
+				return;
+			}
+
 			const loginUserDto = req.body as LoginUserDto;
-			const { user, accessToken, refreshToken } =
-				await service.loginV1(loginUserDto);
+			const { user, accessToken, refreshToken } = await service.loginV1(
+				loginUserDto,
+				req.ip as string,
+			);
 			const userObject = user.toObject();
 
 			res.cookie('refresh_token', refreshToken, {
