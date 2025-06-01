@@ -5,3 +5,5 @@ coverage
 .env.prod
 .env.dev
 mongo-keyfile
+users.acl
+redis.conf

@@ -15,7 +15,7 @@ const notesRouterV1 = Router();
 notesRouterV1.get(
 	'/',
 	validateQuery(zNotesQuerySchema),
-	// cache(),
+	cache(),
 	notesController.getAll,
 );
 

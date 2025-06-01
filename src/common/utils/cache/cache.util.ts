@@ -9,7 +9,7 @@ import {
 } from '#app/common/helpers/redis';
 import type { RedisSetOptions } from '#app/config/db/redis/types';
 
-export function cache(options: RedisSetOptions = { EX: 3000 }) {
+export function cache(options: RedisSetOptions = { EX: 60 }) {
 	return asyncHandler(
 		async (
 			req: Request,

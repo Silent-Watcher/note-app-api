@@ -62,10 +62,10 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 ) => ({
 	async getAll<F extends FilterQuery<Doc>>(
 		opts: MongoQueryOptions<T, Doc>,
-	): Promise<PaginateResult<Doc>> {
+	): Promise<PaginateResult<Doc> | Doc[] | []> {
 		const {
 			filter = {} as F,
-			pagination: { page = 1, pageSize = 10 } = {},
+			pagination: { page, pageSize } = {},
 			projection = {},
 			populate,
 			sort = {} as SortBy<T>,
@@ -74,28 +74,31 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 		} = opts;
 
 		if (search) {
-			console.log('aaa');
 			filter.$text = { $search: search };
 			projection.score = { $meta: 'textScore' };
 			if (!Array.isArray(sort)) sort.score = { $meta: 'textScore' };
 		}
 
-		// ? in case you don't use mongoose paginate v2
-		// let query = model.find(filter, projection ?? null, { session });
+		// ? in case you don't use mongoose paginate v2 and pagination
+		if (!page || !pageSize) {
+			let query = model.find(filter, projection ?? null, { session });
+			// query.skip(page * pageSize).limit(pageSize);
 
-		// query.skip(page * pageSize).limit(pageSize);
+			if (populate) query = query.populate(populate);
 
-		// if (sort) {
-		// 	if (Array.isArray(sort)) {
-		// 		query = query.sort(sort);
-		// 	} else {
-		// 		query = query.sort(sort as Record<string, SortOrder>);
-		// 	}
-		// }
+			if (sort) {
+				if (Array.isArray(sort)) {
+					query = query.sort(sort);
+				} else {
+					query = query.sort(sort as Record<string, SortOrder>);
+				}
+			}
 
-		// if (populate) query = query.populate(populate);
-
-		// const res = await mongo.fire(() => query) as CommandResult<Doc[] | []>;
+			const res = (await mongo.fire(() => query)) as CommandResult<
+				Doc[] | []
+			>;
+			return unwrap(res);
+		}
 
 		const paginateOptions: PaginateOptions = {
 			page,
