@@ -5,9 +5,16 @@ import type { RedisKey } from 'ioredis';
 import { logger } from '#app/common/utils/logger.util';
 import { unwrap } from '#app/config/db/global';
 import type { CommandResult } from '#app/config/db/global';
-import { rawRedis, redis } from '#app/config/db/redis/redis.config';
+import {
+	type MultiExecResult,
+	rawRedis,
+	redis,
+} from '#app/config/db/redis/redis.config';
 import type { RedisSetOptions } from '#app/config/db/redis/types';
 import { brotliCompressAsync, brotliDecompressAsync } from './compression';
+
+export type BlockPrefix = 'recaptcha:block:ip' | 'login:block:ip';
+export type FailurePrefix = 'recaptcha:failure:ip' | 'login:failure:ip';
 
 /**
  * Atomically increments `key` and, only on the first increment,
@@ -117,4 +124,72 @@ export async function readData(
 		logger.error(`Redis read error: ${error}`);
 		return;
 	}
+}
+
+export async function isIpBlocked(
+	ip: string,
+	blockPrefix: BlockPrefix,
+): Promise<boolean> {
+	const blockKey = `${blockPrefix}-${ip}`;
+	const isBlocked = unwrap(await redis.fire('get', blockKey));
+	if (isBlocked) return true;
+	return false;
+}
+
+export async function recordFailure(
+	ip: string,
+	failurePrefix: FailurePrefix,
+	failureWindowSec: number,
+	failureThreshold: number,
+	blockPrefix: BlockPrefix,
+	blockWindowSec: number,
+): Promise<void> {
+	const failureKey = `${failurePrefix}-${ip}`;
+	const count = await safeIncrWithTTL(failureKey, failureWindowSec);
+
+	// if too many failures, block the IP
+	if (count >= failureThreshold) {
+		const blockKey = `${blockPrefix}-${ip}`;
+		const results = unwrap(
+			await redis.fire('multi', [
+				['set', blockKey, '1', 'EX', blockWindowSec],
+				['del', failureKey],
+			]),
+		) as MultiExecResult;
+
+		if (!results || results.length === 0) {
+			logger.error('[REDIS TRANSACTION FAILED]');
+			return;
+		}
+
+		for (let index = 0; index < results.length; index++) {
+			const element = results[index] as NonNullable<
+				Awaited<MultiExecResult>
+			>[number];
+
+			if (element[0]) {
+				logger.error(`[REDIS TRANSACTION FAILED] : ${element[0]}`);
+				return;
+			}
+		}
+
+		logger.warn(
+			`[${
+				blockPrefix.split(':')[0]
+			}][fraud] IP ${ip} blocked for ${blockWindowSec}s after ${count} failed attempts`,
+		);
+	}
+}
+
+/**
+ * Reset failure count after a successful verify
+ */
+export async function resetFailures(
+	ip: string,
+	failurePrefix: FailurePrefix,
+): Promise<void> {
+	const failureKey = `${failurePrefix}-${ip}`;
+	const foundedKey = unwrap(await redis.fire('get', failureKey));
+	if (!foundedKey) return;
+	await redis.fire('del', failureKey);
 }

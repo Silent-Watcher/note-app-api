@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { blockIfAuthenticated } from '#app/common/middlewares/blockIfAuthenticated';
+import { verifyCaptcha } from '#app/common/middlewares/verifyCaptcha';
 import { verifyUser } from '#app/common/middlewares/verifyUser';
 import { validateBody } from '#app/common/validation/dataValidation';
 import { zCreateUserDto } from '#app/modules/users/dtos/create-user.dto';
@@ -25,8 +26,7 @@ const authRouterV1 = Router();
 authRouterV1.post(
 	'/register',
 	blockIfAuthenticated,
-	// ! TEMPORARY COMMENTED
-	// verifyCaptcha('register'),
+	verifyCaptcha('register'),
 	validateBody(zCreateUserDto),
 	authController.registerV1,
 );

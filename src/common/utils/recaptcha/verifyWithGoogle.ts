@@ -1,8 +1,12 @@
 import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
+import {
+	isIpBlocked,
+	recordFailure,
+	resetFailures,
+} from '#app/common/helpers/redis';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
-import { isBlocked, recordFailure, resetFailures } from './recaptchaFraud';
 
 /**
  * Possible error codes returned by Google reCAPTCHA.
@@ -42,7 +46,7 @@ export async function verifyWithGoolge(
 	remoteip: string,
 ): Promise<GoogleCaptchaResponse> {
 	// Quick fail if this IP is already blocked
-	if (await isBlocked(remoteip)) {
+	if (await isIpBlocked(remoteip, 'recaptcha:block:ip')) {
 		logger.error(`[recaptcha][fraud] request from blocked IP ${remoteip}`);
 		return {
 			success: false,
@@ -68,7 +72,14 @@ export async function verifyWithGoolge(
 		response = await res.json();
 	} catch (error) {
 		// Treat network errors as failures
-		recordFailure(remoteip);
+		await recordFailure(
+			remoteip,
+			'recaptcha:failure:ip',
+			60 * 60,
+			5,
+			'recaptcha:block:ip',
+			24 * 60 * 60,
+		);
 		logger.error(`[recaptcha] network error: ${error}`);
 		return {
 			success: false,
@@ -77,7 +88,14 @@ export async function verifyWithGoolge(
 
 	const parsedResponse = zGoogleCaptchaResponse.safeParse(response);
 	if (!parsedResponse.success) {
-		await recordFailure(remoteip);
+		await recordFailure(
+			remoteip,
+			'recaptcha:failure:ip',
+			60 * 60,
+			5,
+			'recaptcha:block:ip',
+			24 * 60 * 60,
+		);
 		logger.error(
 			`[recaptcha] malformed response ${fromZodError(
 				parsedResponse.error,
@@ -90,7 +108,14 @@ export async function verifyWithGoolge(
 	}
 
 	if (!parsedResponse.data.success) {
-		await recordFailure(remoteip);
+		await recordFailure(
+			remoteip,
+			'recaptcha:failure:ip',
+			60 * 60,
+			5,
+			'recaptcha:block:ip',
+			24 * 60 * 60,
+		);
 		logger.warn(
 			'[recaptcha] verification failed:',
 			parsedResponse.data['error-codes'],
@@ -99,7 +124,7 @@ export async function verifyWithGoolge(
 
 	// Success → reset failure count
 	if (parsedResponse.data.success) {
-		await resetFailures(remoteip);
+		await resetFailures(remoteip, 'recaptcha:failure:ip');
 	}
 
 	return {

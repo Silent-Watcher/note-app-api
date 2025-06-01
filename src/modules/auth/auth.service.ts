@@ -8,6 +8,7 @@ import mongoose, {
 } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { generateOtp } from '#app/common/helpers/otp';
+import { recordFailure, resetFailures } from '#app/common/helpers/redis';
 import { generateSecureResetPasswordToken } from '#app/common/helpers/resetPasswordToken';
 import { createHttpError } from '#app/common/utils/http.util';
 import { logger } from '#app/common/utils/logger.util';
@@ -38,7 +39,10 @@ export interface IAuthService {
 
 	invalidateAllTokens(user: Types.ObjectId): Promise<UpdateResult>;
 
-	loginV1(loginUserDto: LoginUserDto): Promise<{
+	loginV1(
+		loginUserDto: LoginUserDto,
+		userIp: string,
+	): Promise<{
 		user: UserDocument;
 		accessToken: string;
 		refreshToken: string;
@@ -217,7 +221,10 @@ const createAuthService = (
 	 *   - `accessToken` {string}: A JWT access token, valid for 5 minutes.
 	 *   - `refreshToken` {string}: A JWT refresh token, valid for 1 day.
 	 */
-	async loginV1(loginUserDto: LoginUserDto): Promise<{
+	async loginV1(
+		loginUserDto: LoginUserDto,
+		userIp: string,
+	): Promise<{
 		user: UserDocument;
 		accessToken: string;
 		refreshToken: string;
@@ -225,19 +232,37 @@ const createAuthService = (
 		const { email, password } = loginUserDto;
 		const foundedUser = await userService.findOneByEmail(email);
 		if (!foundedUser) {
+			await recordFailure(
+				userIp,
+				'login:failure:ip',
+				30 * 60,
+				5,
+				'login:block:ip',
+				24 * 60 * 60,
+			);
 			throw createHttpError(httpStatus.BAD_REQUEST, {
-				code: 'USER_NOT_FOUND',
-				message: 'No account found for the provided email address.',
+				code: 'BAD REQUEST',
+				message: 'invalid credentials',
 			});
 		}
 
 		const isPasswordValid = await compare(password, foundedUser.password);
 		if (!isPasswordValid) {
+			await recordFailure(
+				userIp,
+				'login:failure:ip',
+				30 * 60,
+				5,
+				'login:block:ip',
+				24 * 60 * 60,
+			);
 			throw createHttpError(httpStatus.BAD_REQUEST, {
-				code: 'INVALID_PASSWORD',
-				message: 'The provided password is not valid.',
+				code: 'BAD REQUEST',
+				message: 'invalid credentials',
 			});
 		}
+
+		await resetFailures(userIp, 'login:failure:ip');
 
 		const newAccessToken = jwt.sign(
 			{ userId: foundedUser._id },
