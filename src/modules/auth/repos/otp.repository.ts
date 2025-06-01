@@ -27,15 +27,6 @@ const createotpRepository = () => ({
 	): Promise<OtpDocument> {
 		const result = unwrap(
 			(await mongo.fire(() => {
-				// return otpModel.create(
-				// 	[{
-				// type,
-				// code,
-				// userId,
-				// expiresAt: dayjs().add(5, "minutes").toDate(),
-				// 	}],
-				// 	{ session },
-				// );
 				const doc = new otpModel({
 					type,
 					code,

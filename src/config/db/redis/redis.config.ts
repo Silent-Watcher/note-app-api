@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import CircuitBreaker from 'opossum';
 import { logger } from '#app/common/utils/logger.util';
-import { CONFIG } from '../../index.ts';
+import { CONFIG } from '../../index';
 import type { CommandResult } from '../global.js';
 
 export const REDIS_STATE_MAP: Record<number, string> = {
@@ -27,7 +27,7 @@ export const rawRedis: () => Redis = (() => {
 				port: CONFIG.REDIS.PORT,
 				password: CONFIG.REDIS.PASSWORD,
 				username: CONFIG.REDIS.USERNAME,
-				tls: {},
+				// tls: {},
 				retryStrategy(times) {
 					if (times > MAX_RETRIES) {
 						logger.error(

@@ -24,7 +24,9 @@ interface PaginationOptions {
 /** Sort by any key in your schema T */
 type SortBy<T> =
 	/** { field1?: 1|-1; field2?: 1|-1; … } */
-	| Partial<Record<Extract<keyof T, string>, SortOrder>>
+	| (Partial<Record<Extract<keyof T, string>, SortOrder>> & {
+			score?: { $meta: 'textScore' };
+	  })
 	/** or array-of-tuples: [ ["field1", 1], ["field2", -1], … ] */
 	| [Extract<keyof T, string>, SortOrder][];
 
@@ -37,7 +39,9 @@ export interface MongoQueryOptions<T, Doc extends HydratedDocument<T>> {
 	/** any Mongoose‐style filter on T’s fields */
 	filter?: FilterQuery<Doc>;
 	/** include/exclude fields of T */
-	projection?: ProjectionType<Doc>;
+	projection?: ProjectionType<Doc> & {
+		score?: { $meta: 'textScore' };
+	};
 	/** page/size */
 	pagination?: PaginationOptions;
 	/** sort by fields of T */
@@ -46,7 +50,7 @@ export interface MongoQueryOptions<T, Doc extends HydratedDocument<T>> {
 	session?: ClientSession;
 	/** optional populate */
 	populate?: PopulateOptions | PopulateOptions[];
-	// search?: string
+	search?: string;
 	// useCursor?: boolean
 	// aggPipeline?: PipelineStage[]
 }
@@ -58,31 +62,43 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 ) => ({
 	async getAll<F extends FilterQuery<Doc>>(
 		opts: MongoQueryOptions<T, Doc>,
-	): Promise<PaginateResult<Doc>> {
+	): Promise<PaginateResult<Doc> | Doc[] | []> {
 		const {
 			filter = {} as F,
-			pagination: { page = 1, pageSize = 10 } = {},
-			projection,
+			pagination: { page, pageSize } = {},
+			projection = {},
 			populate,
-			sort,
+			sort = {} as SortBy<T>,
 			session,
+			search,
 		} = opts;
 
-		// let query = model.find(filter, projection ?? null, { session });
+		if (search) {
+			filter.$text = { $search: search };
+			projection.score = { $meta: 'textScore' };
+			if (!Array.isArray(sort)) sort.score = { $meta: 'textScore' };
+		}
 
-		// query.skip(page * pageSize).limit(pageSize);
+		// ? in case you don't use mongoose paginate v2 and pagination
+		if (!page || !pageSize) {
+			let query = model.find(filter, projection ?? null, { session });
+			// query.skip(page * pageSize).limit(pageSize);
 
-		// if (sort) {
-		// 	if (Array.isArray(sort)) {
-		// 		query = query.sort(sort);
-		// 	} else {
-		// 		query = query.sort(sort as Record<string, SortOrder>);
-		// 	}
-		// }
+			if (populate) query = query.populate(populate);
 
-		// if (populate) query = query.populate(populate);
+			if (sort) {
+				if (Array.isArray(sort)) {
+					query = query.sort(sort);
+				} else {
+					query = query.sort(sort as Record<string, SortOrder>);
+				}
+			}
 
-		// const res = await mongo.fire(() => query) as CommandResult<Doc[] | []>;
+			const res = (await mongo.fire(() => query)) as CommandResult<
+				Doc[] | []
+			>;
+			return unwrap(res);
+		}
 
 		const paginateOptions: PaginateOptions = {
 			page,
