@@ -2,18 +2,23 @@ import type {
 	ClientSession,
 	DeleteResult,
 	FilterQuery,
+	PaginateResult,
 	UpdateResult,
 } from 'mongoose';
 import mongoose from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
+import type { MongoQueryOptions } from '#app/config/db/mongo/repository';
 import type { ID } from '#app/config/db/mongo/types';
+import { notesService } from '../notes/notes.service';
 import type { CreateTagDto } from './dtos/create-tag.dto';
 import type { Tag, TagDocument } from './tags.model';
 import { type ITagsRepository, tagsRepository } from './tags.repository';
 
 export interface ITagsService {
-	getAll(userId: ID): Promise<TagDocument[] | []>;
+	getAll(
+		queryOptions: MongoQueryOptions<Tag, TagDocument>,
+	): Promise<PaginateResult<TagDocument> | TagDocument[] | []>;
 	deleteOne(id: ID): Promise<DeleteResult>;
 	create(newTag: CreateTagDto & { user: ID }): Promise<TagDocument>;
 	updateOne(id: ID, changes: Partial<Tag>): Promise<UpdateResult>;
@@ -24,8 +29,10 @@ export interface ITagsService {
 }
 
 const createTagsService = (repo: ITagsRepository) => ({
-	getAll(userId: ID): Promise<TagDocument[] | []> {
-		return repo.getAll(userId);
+	getAll(
+		queryOptions: MongoQueryOptions<Tag, TagDocument>,
+	): Promise<PaginateResult<TagDocument> | TagDocument[] | []> {
+		return repo.getAll(queryOptions);
 	},
 
 	async create(newTag: CreateTagDto & { user: ID }): Promise<TagDocument> {
@@ -55,7 +62,7 @@ const createTagsService = (repo: ITagsRepository) => ({
 			});
 		}
 
-		return repo.create(name, color, user, parent);
+		return repo.create({ name, color, user, parent });
 	},
 
 	async deleteOne(id: ID): Promise<DeleteResult> {
@@ -63,18 +70,18 @@ const createTagsService = (repo: ITagsRepository) => ({
 		try {
 			session.startTransaction();
 			//! REMOVE THE TAG FROM ALL OF THE NOTES THAT CONTAIN THIS
-			await repo.updateMany({ parent: id }, { parent: null });
-			const result = await repo.deleteOne(id, session);
+			await repo.updateMany({ parent: id }, { parent: null }, session);
+			const result = await repo.deleteOne({ _id: id }, session);
 			session.commitTransaction();
-			await session.endSession();
 			return result;
 		} catch (error) {
 			session.abortTransaction();
-			await session.endSession();
 			throw createHttpError(httpStatus.INTERNAL_SERVER_ERROR, {
 				code: 'INTERNAL SERVER ERROR',
 				message: 'transaction failed',
 			});
+		} finally {
+			await session.endSession();
 		}
 	},
 
@@ -103,7 +110,7 @@ const createTagsService = (repo: ITagsRepository) => ({
 		}
 
 		// ! later validation for pinned status
-		return repo.updateOne(id, changes);
+		return repo.updateOne({ _id: id }, changes);
 	},
 
 	countDocuments(

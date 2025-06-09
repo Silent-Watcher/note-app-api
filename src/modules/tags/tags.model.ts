@@ -1,5 +1,11 @@
 import { Schema, Types, model } from 'mongoose';
-import type { HydratedDocument, InferSchemaType } from 'mongoose';
+import type {
+	HydratedDocument,
+	InferSchemaType,
+	PaginateModel,
+} from 'mongoose';
+
+import mongoosePagiante from 'mongoose-paginate-v2';
 
 const tagSchema = new Schema(
 	{
@@ -32,9 +38,12 @@ const tagSchema = new Schema(
 			default: false,
 		},
 	},
-	{ timestamps: false, versionKey: false },
+	{ timestamps: true, versionKey: false },
 );
+
+tagSchema.plugin(mongoosePagiante);
+tagSchema.index({ name: 'text' });
 
 export type Tag = InferSchemaType<typeof tagSchema>;
 export type TagDocument = HydratedDocument<Tag>;
-export const tagModel = model('tag', tagSchema);
+export const tagModel = model('tag', tagSchema) as PaginateModel<Tag>;
