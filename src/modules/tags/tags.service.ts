@@ -69,10 +69,14 @@ const createTagsService = (repo: ITagsRepository) => ({
 		const session = await mongoose.startSession();
 		try {
 			session.startTransaction();
-			//! REMOVE THE TAG FROM ALL OF THE NOTES THAT CONTAIN THIS
+			await notesService.updateMany(
+				{ tags: id },
+				{ $pull: { tags: id } },
+				session,
+			);
 			await repo.updateMany({ parent: id }, { parent: null }, session);
 			const result = await repo.deleteOne({ _id: id }, session);
-			session.commitTransaction();
+			await session.commitTransaction();
 			return result;
 		} catch (error) {
 			session.abortTransaction();

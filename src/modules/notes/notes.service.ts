@@ -33,6 +33,12 @@ export interface INotesService {
 		session?: ClientSession,
 	): Promise<UpdateResult>;
 
+	updateMany(
+		filter: FilterQuery<NoteDocument>,
+		changes: UpdateQuery<NoteDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult>;
+
 	deleteOne(
 		filter: FilterQuery<NoteDocument>,
 		session?: ClientSession,
@@ -76,6 +82,14 @@ const createNotesService = (repo: INotesRepository) => ({
 	): Promise<UpdateResult> {
 		// ! validation and checks!
 		return repo.updateOne(filter, changes);
+	},
+
+	updateMany(
+		filter: FilterQuery<NoteDocument>,
+		changes: UpdateQuery<NoteDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		return repo.updateMany(filter, changes, session);
 	},
 
 	deleteOne(
