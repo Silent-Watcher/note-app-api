@@ -1,9 +1,11 @@
 import type { NextFunction, Request, Response } from 'express';
-import mongoose from 'mongoose';
 import type { Types } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { normalizeSearch } from '#app/common/helpers/query/normalizeSearch';
+import { normalizeSort } from '#app/common/helpers/query/normalizeSort';
 import type { CreateTagDto } from './dtos/create-tag.dto';
 import type { Tag } from './tags.model';
+import type { TagsQuerySchema } from './tags.query';
 import { type ITagsService, tagsService } from './tags.service';
 
 const createTagsController = (service: ITagsService) => ({
@@ -13,7 +15,23 @@ const createTagsController = (service: ITagsService) => ({
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const tags = await service.getAll(req.user?.id);
+			const { page, pageSize, sort, search } =
+				req.query as TagsQuerySchema;
+
+			const tags = await service.getAll({
+				filter: {
+					user: req.user?._id,
+				},
+				projection: {
+					user: 0,
+				},
+				...(search
+					? { search: normalizeSearch(search as string) }
+					: {}),
+				...(page && pageSize ? { pagination: { page, pageSize } } : {}),
+				...(sort ? { sort: { ...normalizeSort(sort) } } : {}),
+			});
+
 			res.sendSuccess(httpStatus.OK, { tags });
 			return;
 		} catch (error) {
@@ -73,7 +91,17 @@ const createTagsController = (service: ITagsService) => ({
 		try {
 			const id = req.params.id as string;
 			const changes = req.body as Partial<Tag>;
-			const result = await service.updateOne(id, changes);
+			const { modifiedCount } = await service.updateOne(id, changes);
+
+			if (!modifiedCount) {
+				res.sendError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'tag with this id not found',
+				});
+				return;
+			}
+
+			res.sendSuccess(httpStatus.OK, {}, 'updated successfully');
 		} catch (error) {
 			next(error);
 		}

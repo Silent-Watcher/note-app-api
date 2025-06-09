@@ -15,6 +15,7 @@ import type {
 } from 'mongoose';
 import { type CommandResult, unwrap } from '../global';
 import { mongo } from './mongo.condig';
+import type { ExistsResult } from './types';
 
 interface PaginationOptions {
 	page?: number;
@@ -139,6 +140,18 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 		);
 	},
 
+	async updateMany(
+		filter: FilterQuery<Doc>,
+		changes: UpdateQuery<Doc>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model.updateMany(filter, changes, { session }).lean(),
+			)) as CommandResult<Promise<UpdateResult>>,
+		);
+	},
+
 	async deleteOne(
 		filter: FilterQuery<Doc>,
 		session?: ClientSession,
@@ -147,6 +160,31 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 			(await mongo.fire(() =>
 				model.deleteOne(filter, { session }).lean(),
 			)) as CommandResult<Promise<DeleteResult>>,
+		);
+	},
+
+	async isExists(
+		filter: FilterQuery<Doc>,
+		session?: ClientSession,
+	): Promise<ExistsResult> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model
+					.exists(filter)
+					.session(session as ClientSession)
+					.lean(),
+			)) as CommandResult<ExistsResult>,
+		);
+	},
+
+	async countDocuments(
+		filter: FilterQuery<Doc>,
+		session?: ClientSession,
+	): Promise<number> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model.countDocuments(filter, { session }),
+			)) as CommandResult<Promise<number>>,
 		);
 	},
 });
