@@ -1,5 +1,10 @@
 import { Schema, model } from 'mongoose';
-import type { HydratedDocument, InferSchemaType } from 'mongoose';
+import type {
+	HydratedDocument,
+	InferSchemaType,
+	PaginateModel,
+} from 'mongoose';
+import mongoosePagiante from 'mongoose-paginate-v2';
 
 const userSchema = new Schema(
 	{
@@ -10,16 +15,9 @@ const userSchema = new Schema(
 	{ versionKey: false },
 );
 
-/**
- * Type representing the plain User schema structure
- * (without any Mongoose document methods or fields like `_id`).
- */
-export type User = InferSchemaType<typeof userSchema>;
+userSchema.plugin(mongoosePagiante);
 
-/**
- * Type representing a full Mongoose User document,
- * including Mongoose-specific fields and methods (like `_id`, `save()`, etc).
- */
+export type User = InferSchemaType<typeof userSchema>;
 export type UserDocument = HydratedDocument<User>;
 
-export const userModel = model<UserDocument>('user', userSchema);
+export const userModel = model('user', userSchema) as PaginateModel<User>;

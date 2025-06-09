@@ -52,6 +52,7 @@ export interface MongoQueryOptions<T, Doc extends HydratedDocument<T>> {
 	/** optional populate */
 	populate?: PopulateOptions | PopulateOptions[];
 	search?: string;
+	lean?: boolean;
 	// useCursor?: boolean
 	// aggPipeline?: PipelineStage[]
 }
@@ -72,6 +73,7 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 			sort = {} as SortBy<T>,
 			session,
 			search,
+			lean = true,
 		} = opts;
 
 		if (search) {
@@ -95,9 +97,9 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 				}
 			}
 
-			const res = (await mongo.fire(() => query)) as CommandResult<
-				Doc[] | []
-			>;
+			const res = (await mongo.fire(() =>
+				lean ? query.lean() : query,
+			)) as CommandResult<Doc[] | []>;
 			return unwrap(res);
 		}
 
@@ -107,7 +109,7 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 			sort: sort || undefined,
 			projection,
 			populate,
-			lean: true,
+			lean,
 			options: {
 				session,
 			},
@@ -185,6 +187,23 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 			(await mongo.fire(() =>
 				model.countDocuments(filter, { session }),
 			)) as CommandResult<Promise<number>>,
+		);
+	},
+
+	async findOne(
+		filter: FilterQuery<Doc>,
+		projection?: ProjectionType<Doc>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<Doc | null> {
+		return unwrap(
+			(await mongo.fire(() =>
+				lean
+					? model
+							.findOne(filter, projection ?? null, { session })
+							.lean()
+					: model.findOne(filter, projection ?? null, { session }),
+			)) as CommandResult<Promise<Doc | null>>,
 		);
 	},
 });
