@@ -20,7 +20,7 @@ import { notesRepository } from './notes.repository';
 export interface INotesService {
 	getAll(
 		queryOptions: MongoQueryOptions<Note, NoteDocument>,
-	): Promise<PaginateResult<NoteDocument>>;
+	): Promise<PaginateResult<NoteDocument> | NoteDocument[] | []>;
 
 	create(
 		data: CreateNotesDto & { user: ID },
@@ -42,12 +42,12 @@ export interface INotesService {
 const createNotesService = (repo: INotesRepository) => ({
 	getAll(
 		queryOptions: MongoQueryOptions<Note, NoteDocument>,
-	): Promise<PaginateResult<NoteDocument>> {
+	): Promise<PaginateResult<NoteDocument> | NoteDocument[] | []> {
 		return repo.getAll(queryOptions);
 	},
 
 	async create(
-		data: CreateNotesDto & { user: string | Types.ObjectId },
+		data: CreateNotesDto & { user: ID },
 		session?: ClientSession,
 	): Promise<NoteDocument> {
 		if (data.tags) {

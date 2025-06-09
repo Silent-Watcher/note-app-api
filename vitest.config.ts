@@ -12,7 +12,7 @@ export default defineConfig({
 			include: ['src/**/*.ts'],
 		},
 		environment: 'node',
-		setupFiles: './tests/setup-env.ts', // setup file to prepare env
+		setupFiles: './vitest.setup.ts',
 	},
 	resolve: {
 		alias: {
