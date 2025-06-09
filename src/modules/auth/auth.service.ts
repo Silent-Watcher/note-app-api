@@ -380,7 +380,14 @@ const createAuthService = (
 		accessToken: string;
 		refreshToken: string;
 	}> {
-		const user = await userService.findOneByEmail(email);
+		const user = await userService.findOneByEmail(
+			email,
+			{
+				isEmailVerified: 1,
+				_id: 1,
+			},
+			false,
+		);
 
 		if (!user) {
 			throw createHttpError(httpStatus.BAD_REQUEST, {

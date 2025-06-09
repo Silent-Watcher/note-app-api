@@ -4,15 +4,18 @@ import {
 	userRepository,
 } from '#app/modules/users/user.repository';
 
-import type { Types, UpdateResult } from 'mongoose';
+import type { ProjectionType, Types, UpdateResult } from 'mongoose';
+import type { ClientSession } from 'mongoose';
 import type { UserDocument } from './user.model';
 
-/**
- * Interface defining the user service methods.
- */
 export interface IUserService {
 	findById(id: Types.ObjectId): Promise<UserDocument | null>;
-	findOneByEmail(email: string): Promise<UserDocument | null>;
+	findOneByEmail(
+		email: string,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null>;
 	updatePassword(
 		id: Types.ObjectId,
 		newPassword: string,
@@ -22,20 +25,17 @@ export interface IUserService {
 	): Promise<UserDocument>;
 }
 
-/**
- * Factory function to create a user service instance.
- *
- * The service layer interacts with the repository and provides
- * abstraction for user-related operations such as finding and creating users.
- *
- * @param {IUserRepository} repo - The repository instance to interact with the database.
- */
 const createUserService = (repo: IUserRepository) => ({
 	findById(id: Types.ObjectId): Promise<UserDocument | null> {
-		return repo.findById(id);
+		return repo.findOne({ _id: id }, { password: 0 });
 	},
-	async findOneByEmail(email: string): Promise<UserDocument | null> {
-		return repo.findOneByEmail(email);
+	async findOneByEmail(
+		email: string,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null> {
+		return repo.findOne({ email }, projection, lean, session);
 	},
 	async create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
@@ -46,11 +46,8 @@ const createUserService = (repo: IUserRepository) => ({
 		id: Types.ObjectId,
 		newPassword: string,
 	): Promise<UpdateResult> {
-		return repo.updatePassword(id, newPassword);
+		return repo.updateOne({ _id: id }, { password: newPassword });
 	},
 });
 
-/**
- * Singleton instance of the user service.
- */
 export const userService = createUserService(userRepository);
