@@ -35,6 +35,7 @@ const createTagsService = (repo: ITagsRepository) => ({
 			const result = await repo.isExists({
 				_id: parent,
 				parent: { $exists: false },
+				user,
 			});
 
 			if (!result) {
@@ -43,6 +44,15 @@ const createTagsService = (repo: ITagsRepository) => ({
 					message: 'parent tag with given id not found',
 				});
 			}
+		}
+
+		const nameExists = await repo.isExists({ name, user });
+
+		if (nameExists) {
+			throw createHttpError(httpStatus.BAD_REQUEST, {
+				code: 'BAD REQUEST',
+				message: `tag with given name : "${name}" already exists`,
+			});
 		}
 
 		return repo.create(name, color, user, parent);
