@@ -22,7 +22,7 @@ const userSchema = new Schema(
 			trim: true,
 			unique: false,
 		},
-		avatar: { type: [avatarSchema], required: false },
+		avatar: { type: [avatarSchema], required: false, default: [] },
 		email: { type: String, required: true, trim: true, unique: true },
 		password: { type: String, required: true, trim: true },
 		mobile: { type: String, required: false, default: undefined },
