@@ -6,10 +6,11 @@ import {
 
 import type { ProjectionType, Types, UpdateResult } from 'mongoose';
 import type { ClientSession } from 'mongoose';
+import type { ID } from '#app/config/db/mongo/types';
 import type { UserDocument } from './user.model';
 
 export interface IUserService {
-	findById(id: Types.ObjectId): Promise<UserDocument | null>;
+	findById(id: ID): Promise<UserDocument | null>;
 	findOneByEmail(
 		email: string,
 		projection?: ProjectionType<UserDocument>,
@@ -26,7 +27,7 @@ export interface IUserService {
 }
 
 const createUserService = (repo: IUserRepository) => ({
-	findById(id: Types.ObjectId): Promise<UserDocument | null> {
+	findById(id: ID): Promise<UserDocument | null> {
 		return repo.findOne({ _id: id }, { password: 0 });
 	},
 	async findOneByEmail(
