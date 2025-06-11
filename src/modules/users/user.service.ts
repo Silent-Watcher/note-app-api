@@ -4,26 +4,41 @@ import {
 	userRepository,
 } from '#app/modules/users/user.repository';
 
-import type { ProjectionType, Types, UpdateResult } from 'mongoose';
+import type {
+	FilterQuery,
+	ProjectionType,
+	Types,
+	UpdateQuery,
+	UpdateResult,
+} from 'mongoose';
 import type { ClientSession } from 'mongoose';
 import type { ID } from '#app/config/db/mongo/types';
 import type { UserDocument } from './user.model';
 
 export interface IUserService {
 	findById(id: ID): Promise<UserDocument | null>;
+
 	findOneByEmail(
 		email: string,
 		projection?: ProjectionType<UserDocument>,
 		lean?: boolean,
 		session?: ClientSession,
 	): Promise<UserDocument | null>;
+
 	updatePassword(
 		id: Types.ObjectId,
 		newPassword: string,
 	): Promise<UpdateResult>;
+
 	create(
 		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
 	): Promise<UserDocument>;
+
+	updateOne(
+		filter: FilterQuery<UserDocument>,
+		changes: UpdateQuery<UserDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult>;
 }
 
 const createUserService = (repo: IUserRepository) => ({
@@ -48,6 +63,14 @@ const createUserService = (repo: IUserRepository) => ({
 		newPassword: string,
 	): Promise<UpdateResult> {
 		return repo.updateOne({ _id: id }, { password: newPassword });
+	},
+
+	updateOne(
+		filter: FilterQuery<UserDocument>,
+		changes: UpdateQuery<UserDocument>,
+		session?: ClientSession,
+	): Promise<UpdateResult> {
+		return repo.updateOne(filter, changes, session);
 	},
 });
 

@@ -9,7 +9,7 @@ import mongoosePagiante from 'mongoose-paginate-v2';
 const avatarSchema = new Schema(
 	{
 		source: { type: String, required: true, trim: true },
-		url: { type: String, required: true, trim: true },
+		urls: { type: [String], required: true, trim: true },
 	},
 	{ timestamps: false, versionKey: false, id: false },
 );
@@ -28,6 +28,12 @@ const userSchema = new Schema(
 		mobile: { type: String, required: false, default: undefined },
 		isMobileVerfied: { type: Boolean, required: false, default: false },
 		isEmailVerified: { type: Boolean, required: true, default: false },
+		pendingAvatarJobId: {
+			type: String,
+			required: false,
+			default: undefined,
+		},
+		avatarJobError: { type: String, required: false, default: undefined },
 	},
 	{ versionKey: false },
 );
