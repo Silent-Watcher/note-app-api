@@ -65,4 +65,12 @@ export const CONFIG = Object.freeze({
 		SECRET_KEY: _env.RECAPTCHA_SECRET_KEY,
 		DEV_AUTH: _env.DEV_RECAPTCHA_AUTH,
 	}),
+
+	MINIO: {
+		ACCESS_KEY: _env.MINIO_ACCESS_KEY,
+		SECRET_KEY: _env.MINIO_SECRET_KEY,
+		ENDPOINT: _env.MINIO_ENDPOINT,
+		PORT: _env.MINIO_PORT,
+		USE_SSL: _env.MINIO_USE_SSL,
+	},
 });

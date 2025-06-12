@@ -2,17 +2,8 @@ import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { levelNames, logger } from '#app/common/utils/logger.util';
 
-/**
- * Array of valid log levels extracted from pino.levels.values.
- * Used to validate the LOG_LEVEL environment variable.
- * @constant logLevels
- * @type {[string, ...string[]]}
- */
 const logLevels = levelNames as [string, ...string[]];
 
-/**
- * Zod schema for validating environment variables.
- */
 const zEnv = z.object({
 	NODE_ENV: z.enum(['development', 'test', 'production']),
 
@@ -128,17 +119,31 @@ const zEnv = z.object({
 		.nonempty('RECAPTCHA_SECRET_KEY is required'),
 
 	DEV_RECAPTCHA_AUTH: z.string().nonempty('DEV_RECAPTCHA_AUTH is required'),
+
+	MINIO_ACCESS_KEY: z.string().nonempty('MINIO_ACCESS_KEY is required'),
+	MINIO_SECRET_KEY: z.string().nonempty('MINIO_SECRET_KEY is required'),
+	MINIO_ENDPOINT: z.string().nonempty('MINIO_ENDPOINT is required'),
+	MINIO_PORT: z
+		.string()
+		.regex(/^\d+$/, { message: 'MINIO_PORT must be a number' })
+		.transform(Number)
+		.refine((port) => port > 0 && port < 65536, {
+			message: 'MINIO_PORT must be a valid port number',
+		}),
+	MINIO_USE_SSL: z.coerce.boolean().default(false),
+
+	CLAMV_HOST: z.string().nonempty({ message: 'CLAMV_HOST is required' }),
+	CLAMV_PORT: z
+		.string()
+		.regex(/^\d+$/, { message: 'CLAMV_PORT must be a number' })
+		.transform(Number)
+		.refine((port) => port > 0 && port < 65536, {
+			message: 'CLAMV_PORT must be a valid port number',
+		}),
 });
 
-/**
- * Type representing the validated environment variables.
- */
 export type Env = z.infer<typeof zEnv>;
 
-/**
- * Result of parsing and validating process.env against the zEnv schema.
- * @type {{ success: boolean; data?: Env; error?: import('zod').ZodError }}
- */
 const zEnvValidationResult = zEnv.safeParse(process.env);
 
 if (!zEnvValidationResult.success) {
@@ -150,18 +155,10 @@ if (!zEnvValidationResult.success) {
 	process.exit(1);
 }
 
-/**
- * Validated environment variables.
- * @constant _env
- * @type {Env}
- */
 export const _env = zEnvValidationResult.data;
 
 declare global {
 	namespace NodeJS {
-		/**
-		 * Extend NodeJS.ProcessEnv interface with validated env variables.
-		 */
 		interface ProcessEnv extends Env {}
 	}
 }

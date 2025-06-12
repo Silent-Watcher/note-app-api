@@ -1,20 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Data Transfer Object for user registration.
- *
- * @typedef {Object} CreateUserDto
- * @property {string} email           - The user's email address (must be valid).
- * @property {string} password        - The user's password (min. 8 characters).
- * @property {string} confirmPassword - Confirmation of the password; must match `password`.
- */
-
-/**
- * Zod schema to validate the incoming `CreateUserDto`.
- * - Ensures `email` is a valid email string.
- * - Enforces `password` and `confirmPassword` to be at least 8 characters.
- * - Checks that `password === confirmPassword`.
- */
 export const zCreateUserDto = z
 	.object({
 		email: z.string().email({ message: 'Invalid email address' }).trim(),
