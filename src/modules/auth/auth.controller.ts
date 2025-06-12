@@ -1,6 +1,12 @@
 import type { Job } from 'bullmq';
 import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
+import {
+	getGithubProfileAndEmails,
+	getGithubTokenFromCode,
+	issueGithubState,
+	validateGithubState,
+} from '#app/common/helpers/githubAuth';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { mailGenerator } from '#app/common/helpers/mailgen';
 import { isIpBlocked } from '#app/common/helpers/redis';
@@ -17,21 +23,20 @@ import type { LoginUserDto } from './dtos/login-user.dto';
 import type { ResetPasswordDto } from './dtos/reset-password.dto';
 import type { VerifyEmailDto } from './dtos/verify-email.dto';
 
-const createAuthController = (service: IAuthService) => ({
-	/**
-	 * Handles user registration (v1).
-	 *
-	 * - Receives user registration data from the request body.
-	 * - Calls the service to create a new user and generate authentication tokens.
-	 * - Sets a secure HTTP-only refresh token cookie.
-	 * - Sends back the access token and basic user information in the response.
-	 *
-	 * @param {Request} req - Express request object containing the user registration data.
-	 * @param {Response} res - Express response object used to send the access token and user info.
-	 * @param {NextFunction} next - Express next function for error handling.
-	 *
-	 * @returns {Promise<void>}
-	 */
+import { hash } from 'bcrypt';
+import dayjs from 'dayjs';
+import jwt from 'jsonwebtoken';
+import type { DecodedToken } from '#app/common/helpers/jwt';
+import { type CommandResult, unwrap } from '#app/config/db/global';
+import { mongo } from '#app/config/db/mongo/mongo.condig';
+import { type User, type UserDocument, userModel } from '../users/user.model';
+import { type IUserService, userService } from '../users/user.service';
+import { refreshTokenModel } from './models/refresh-token.model';
+
+const createAuthController = (
+	service: IAuthService,
+	userService: IUserService,
+) => ({
 	async registerV1(
 		req: Request,
 		res: Response,
@@ -86,20 +91,6 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
-	/**
-	 * Handles refreshing of access and refresh tokens.
-	 *
-	 * - Expects a `refresh_token` cookie from the client.
-	 * - If no refresh token is found, responds with 401 Unauthorized.
-	 * - If a valid refresh token is provided, generates a new access token and refresh token.
-	 * - Sets a new `refresh_token` cookie with updated expiry and returns the new access token in the response.
-	 *
-	 * @async
-	 * @param {Request} req - Express request object, expected to have cookies containing `refresh_token`.
-	 * @param {Response} res - Express response object used to send success or error responses.
-	 * @param {NextFunction} next - Express next middleware function for error handling.
-	 * @returns {Promise<void>}
-	 */
 	async refreshTokensV1(
 		req: Request,
 		res: Response,
@@ -141,17 +132,6 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
-	/**
-	 * Logs out the currently authenticated user by:
-	 * - Invalidating all tokens associated with the user's ID.
-	 * - Clearing the user's session from the request.
-	 * - Removing the refresh token cookie.
-	 * - Sending a success response to the client.
-	 *
-	 * @param {Request} req - Express request object, with `user` containing the authenticated user's info.
-	 * @param {Response} res - Express response object used to send back the HTTP response.
-	 * @param {NextFunction} next - Express next middleware function to pass errors if they occur.
-	 */
 	async logoutV1(
 		req: Request,
 		res: Response,
@@ -172,25 +152,6 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
-	/**
-	 * Handles user login by validating credentials and issuing authentication tokens.
-	 *
-	 * @function loginV1
-	 * @memberof AuthController
-	 * @async
-	 * @param {Request} req - Express request object containing the user credentials in the body.
-	 * @param {Response} res - Express response object used to send back the tokens and user info.
-	 * @param {NextFunction} next - Express next middleware function for error handling.
-	 *
-	 * @description
-	 *  - Validates user credentials using the service layer.
-	 *  - Issues an access token and a refresh token.
-	 *  - Sets the refresh token in an HTTP-only cookie scoped to `/auth/refresh`.
-	 *  - Attaches the user object to `req.user` for downstream middleware use.
-	 *  - Responds with a success message, user ID, email, and the access token.
-	 *
-	 * @returns {void}
-	 */
 	async loginV1(
 		req: Request,
 		res: Response,
@@ -239,25 +200,6 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
-	/**
-	 * Initiates the password reset process by generating a secure reset token and emailing the user.
-	 *
-	 * @function requestPasswordResetV1
-	 * @memberof AuthController
-	 * @async
-	 * @param {Request} req - Express request object containing the user's email in the body.
-	 * @param {Response} res - Express response object used to confirm reset email dispatch.
-	 * @param {NextFunction} next - Express next middleware function for error handling.
-	 *
-	 * @description
-	 *  - Extracts the email from the request body.
-	 *  - Calls the service layer to generate a secure reset token for the user.
-	 *  - Constructs a password reset URL using the token and configured client URL.
-	 *  - Sends a password reset email using a templated HTML message.
-	 *  - Responds with a success message confirming that the reset link was sent.
-	 *
-	 * @returns {void}
-	 */
 	async requestPasswordResetV1(
 		req: Request,
 		res: Response,
@@ -294,20 +236,6 @@ const createAuthController = (service: IAuthService) => ({
 		}
 	},
 
-	/**
-	 * Handles the password reset request from the client.
-	 *
-	 * This controller method:
-	 * 1. Extracts the reset token and new password from the request body.
-	 * 2. Attempts to reset the password via the service layer.
-	 * 3. Responds with an error if the token is invalid.
-	 * 4. Redirects the user to the login page upon success.
-	 *
-	 * @param {Request} req - The Express request object, expected to contain `token` and `password` in the body.
-	 * @param {Response} res - The Express response object.
-	 * @param {NextFunction} next - The Express next middleware function, used for error handling.
-	 * @returns {Promise<void>} A promise that resolves when the response has been sent.
-	 */
 	async resetPasswordV1(
 		req: Request,
 		res: Response,
@@ -364,6 +292,309 @@ const createAuthController = (service: IAuthService) => ({
 			next(error);
 		}
 	},
+
+	async redirectToGithubPage(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const githubState = issueGithubState();
+			const params = new URLSearchParams({
+				client_id: CONFIG.GITHUB.CLIENT_ID,
+				redirect_uri: CONFIG.GITHUB.CALLBACK_URL,
+				state: githubState,
+				scope: 'read:user user:email',
+			});
+			res.redirect(`https://github.com/login/oauth/authorize?${params}`);
+			return;
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async handleGithubReturnCode(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const { code, state } = req.query;
+
+			if (!state || !code) {
+				res.sendError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'Bad Credentials',
+				});
+				return;
+			}
+			// verify state
+			validateGithubState(state as string);
+			console.log('github state valid');
+
+			const githubAccessToken = await getGithubTokenFromCode(
+				code as string,
+			);
+
+			console.log('githubAccessToken: ', githubAccessToken);
+			const ghProfile =
+				await getGithubProfileAndEmails(githubAccessToken);
+			console.log('githubProfile: ', ghProfile);
+
+			// add user to database
+			// issue your tokens!
+			// return response!
+			// githubProfile:  {
+			// 	id: 91375198,
+			// 	username: 'Silent-Watcher',
+			// 	avatarUrl: 'https://avatars.githubusercontent.com/u/91375198?v=4',
+			// 	email: 'alitabatabaee20@gmail.com'
+			//   }
+
+			const targetUser = await unwrap(
+				(await mongo.fire(() =>
+					userModel.findOne({ email: ghProfile.email }),
+				)) as CommandResult<Promise<UserDocument | null>>,
+			);
+
+			console.log('targetUser: ', targetUser);
+
+			if (!targetUser) {
+				const newUser = await userService.create({
+					avatar: [
+						{
+							source: 'Github',
+							urls: [ghProfile.avatarUrl as string],
+						},
+					],
+					email: ghProfile.email,
+					githubId: ghProfile.id,
+					displayName: ghProfile.email?.split('@')[0],
+					isEmailVerified: true,
+				});
+
+				const tempToken = jwt.sign(
+					{
+						userId: newUser._id,
+						githubId: newUser.githubId,
+						githubOnly: true,
+					},
+					CONFIG.JWT_ACCESS_SECRET,
+					{ expiresIn: '5m' },
+				);
+
+				res.sendSuccess(
+					httpStatus.ACCEPTED,
+					{
+						user: newUser.toObject(),
+						needsPassword: true,
+						tempToken,
+					},
+					'user should specify their password',
+				);
+				return;
+			}
+
+			if (!targetUser.githubId) {
+				await targetUser.updateOne({ githubId: ghProfile.id });
+			}
+
+			if (!targetUser?.password) {
+				const tempToken = jwt.sign(
+					{
+						userId: targetUser._id,
+						githubId: targetUser.githubId,
+						githubOnly: true,
+					},
+					CONFIG.JWT_ACCESS_SECRET,
+					{ expiresIn: '5m' },
+				);
+
+				res.sendSuccess(
+					httpStatus.ACCEPTED,
+					{
+						user: targetUser.toObject(),
+						needsPassword: true,
+						tempToken,
+					},
+					'user should specify their password',
+				);
+				return;
+			}
+
+			const accessToken = jwt.sign(
+				{ userId: targetUser._id },
+				CONFIG.SECRET.ACCESS_TOKEN,
+				{ expiresIn: '5m' },
+			);
+
+			const refreshToken = jwt.sign(
+				{ userId: targetUser._id },
+				CONFIG.SECRET.REFRESH_TOKEN,
+				{ expiresIn: '1d' },
+			);
+
+			await unwrap(
+				await mongo.fire(() =>
+					refreshTokenModel.create({
+						hash: refreshToken,
+						rootIssuedAt: dayjs().toDate(),
+						user: targetUser._id,
+					}),
+				),
+			);
+
+			res.cookie('refresh_token', refreshToken, {
+				httpOnly: true,
+				secure: !CONFIG.DEBUG,
+				sameSite: 'strict',
+				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+				path: '/api/auth/refresh',
+			});
+
+			req.user = targetUser;
+
+			res.sendSuccess(
+				httpStatus.OK,
+				{
+					user: { _id: targetUser._id, email: targetUser.email },
+					accessToken,
+				},
+				'login success!',
+			);
+			return;
+		} catch (error) {
+			next(error);
+		}
+	},
+
+	async setPassword(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const { password } = req.body;
+
+			const authHeader = req.headers.authorization;
+			if (!authHeader) {
+				res.sendError(httpStatus.FORBIDDEN, {
+					code: 'FORBIDDEN',
+					message: 'authorization header not found',
+				});
+				return;
+			}
+			const tempToken = authHeader?.split(' ')[1];
+
+			if (!tempToken) {
+				res.sendError(httpStatus.FORBIDDEN, {
+					code: 'FORBIDDEN',
+					message: 'token not found!',
+				});
+				return;
+			}
+
+			jwt.verify(
+				tempToken,
+				CONFIG.JWT_ACCESS_SECRET,
+				async (
+					err: jwt.VerifyErrors | null,
+					decoded: string | jwt.JwtPayload | undefined,
+				) => {
+					const { userId, githubId } = decoded as DecodedToken;
+
+					if (err instanceof jwt.TokenExpiredError) {
+						await unwrap(
+							await mongo.fire(() =>
+								userModel.deleteOne({
+									_id: userId,
+									githubId: githubId,
+								}),
+							),
+						);
+						res.sendError(httpStatus.BAD_REQUEST, {
+							code: 'BAD REQUEST',
+							message: 'token expired',
+						});
+						return;
+					}
+
+					if (err instanceof jwt.JsonWebTokenError) {
+						res.sendError(httpStatus.BAD_REQUEST, {
+							code: 'BAD REQUEST',
+							message: 'invalid token',
+						});
+						return;
+					}
+
+					const newPassword = await hash(password, 10);
+
+					const updatedUser = await unwrap(
+						(await mongo.fire(() =>
+							userModel.findOneAndUpdate(
+								{
+									_id: userId,
+									githubId,
+								},
+								{ $set: { password: newPassword } },
+								{ returnDocument: 'after' },
+							),
+						)) as CommandResult<UserDocument | null>,
+					);
+
+					if (!updatedUser) {
+						res.sendError(httpStatus.BAD_REQUEST, {
+							code: 'BAD REQUEST',
+							message: 'user not found',
+						});
+						return;
+					}
+
+					const accessToken = jwt.sign(
+						{ userId },
+						CONFIG.SECRET.ACCESS_TOKEN,
+						{ expiresIn: '5m' },
+					);
+
+					const refreshToken = jwt.sign(
+						{ userId },
+						CONFIG.SECRET.REFRESH_TOKEN,
+						{ expiresIn: '1d' },
+					);
+
+					await unwrap(
+						await mongo.fire(() =>
+							refreshTokenModel.create({
+								hash: refreshToken,
+								rootIssuedAt: dayjs().toDate(),
+								user: userId,
+							}),
+						),
+					);
+
+					res.cookie('refresh_token', refreshToken, {
+						httpOnly: true,
+						secure: !CONFIG.DEBUG,
+						sameSite: 'strict',
+						maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+						path: '/api/auth/refresh',
+					});
+
+					req.user = updatedUser;
+
+					res.sendSuccess(httpStatus.OK, {
+						accessToken,
+						user: {
+							_id: updatedUser._id,
+							email: updatedUser.email,
+						},
+					});
+				},
+			);
+		} catch (error) {
+			next(error);
+		}
+	},
 });
 
-export const authController = createAuthController(authService);
+export const authController = createAuthController(authService, userService);

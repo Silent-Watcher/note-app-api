@@ -13,7 +13,7 @@ import type {
 } from 'mongoose';
 import type { ClientSession } from 'mongoose';
 import type { ID } from '#app/config/db/mongo/types';
-import type { UserDocument } from './user.model';
+import type { User, UserDocument } from './user.model';
 
 export interface IUserService {
 	findById(id: ID): Promise<UserDocument | null>;
@@ -30,9 +30,7 @@ export interface IUserService {
 		newPassword: string,
 	): Promise<UpdateResult>;
 
-	create(
-		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
-	): Promise<UserDocument>;
+	create(dto: Partial<User>): Promise<UserDocument>;
 
 	updateOne(
 		filter: FilterQuery<UserDocument>,
@@ -53,10 +51,8 @@ const createUserService = (repo: IUserRepository) => ({
 	): Promise<UserDocument | null> {
 		return repo.findOne({ email }, projection, lean, session);
 	},
-	async create(
-		createUserDto: Pick<CreateUserDto, 'email' | 'password'>,
-	): Promise<UserDocument> {
-		return repo.create(createUserDto);
+	async create(dto: Partial<User>): Promise<UserDocument> {
+		return repo.create(dto);
 	},
 	updatePassword(
 		id: Types.ObjectId,

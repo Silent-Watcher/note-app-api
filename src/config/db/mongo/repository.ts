@@ -122,7 +122,7 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 		return unwrap(res);
 	},
 
-	async create(data: unknown, session?: ClientSession): Promise<Doc> {
+	async create(data: Partial<T>, session?: ClientSession): Promise<Doc> {
 		const doc = new model(data);
 		const res = (await mongo.fire(() =>
 			doc.save({ session }),

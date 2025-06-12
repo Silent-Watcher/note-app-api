@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
-export const zResetPasswordDto = z
+export const zSetPasswordDto = z
 	.object({
-		token: z.string().nonempty('Token is required'),
 		password: z
 			.string()
 			.min(8, { message: 'Password must be at least 8 characters long' }),
@@ -12,7 +11,7 @@ export const zResetPasswordDto = z
 	})
 	.refine((data) => data.password === data.confirmPassword, {
 		message: 'Passwords do not match',
-		path: ['confirmPassword'], // attaches the error to confirmPassword
+		path: ['confirmPassword'],
 	});
 
-export type ResetPasswordDto = z.infer<typeof zResetPasswordDto>;
+export type SetPasswordDto = z.infer<typeof zSetPasswordDto>;

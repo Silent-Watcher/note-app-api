@@ -8,6 +8,7 @@ import { authController } from './auth.controller';
 import { zForgotPasswordDto } from './dtos/forgot-password.dto';
 import { zLoginUserDto } from './dtos/login-user.dto';
 import { zResetPasswordDto } from './dtos/reset-password.dto';
+import { zSetPasswordDto } from './dtos/set-password.dto';
 import { zVerifyEmailDto } from './dtos/verify-email.dto';
 
 const authRouterV1 = Router();
@@ -51,6 +52,15 @@ authRouterV1.post(
 	'/verify-email',
 	validateBody(zVerifyEmailDto),
 	authController.verifyEmail,
+);
+
+authRouterV1.get('/github', authController.redirectToGithubPage);
+authRouterV1.get('/github/callback', authController.handleGithubReturnCode);
+
+authRouterV1.post(
+	'/set-password',
+	validateBody(zSetPasswordDto),
+	authController.setPassword,
 );
 
 export { authRouterV1 };

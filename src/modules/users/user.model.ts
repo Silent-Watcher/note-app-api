@@ -6,12 +6,30 @@ import type {
 } from 'mongoose';
 import mongoosePagiante from 'mongoose-paginate-v2';
 
+type Avatar = {
+	source: string;
+	urls: string[];
+};
+
+export type User = {
+	displayName?: string;
+	avatar?: Avatar[]; // default: []
+	email: string;
+	password: string;
+	mobile?: string; // default: undefined
+	isMobileVerfied?: boolean; // default: false
+	isEmailVerified: boolean; // required with default: false
+	pendingAvatarJobId?: string;
+	avatarJobError?: string;
+	githubId?: string;
+};
+
 const avatarSchema = new Schema(
 	{
 		source: { type: String, required: true, trim: true },
 		urls: { type: [String], required: true, trim: true },
 	},
-	{ timestamps: false, versionKey: false, id: false },
+	{ timestamps: false, versionKey: false, id: false, _id: false },
 );
 
 const userSchema = new Schema(
@@ -24,7 +42,13 @@ const userSchema = new Schema(
 		},
 		avatar: { type: [avatarSchema], required: false, default: [] },
 		email: { type: String, required: true, trim: true, unique: true },
-		password: { type: String, required: true, trim: true },
+		password: {
+			type: String,
+			required: function () {
+				return !this.githubId;
+			},
+			trim: true,
+		},
 		mobile: { type: String, required: false, default: undefined },
 		isMobileVerfied: { type: Boolean, required: false, default: false },
 		isEmailVerified: { type: Boolean, required: true, default: false },
@@ -34,13 +58,14 @@ const userSchema = new Schema(
 			default: undefined,
 		},
 		avatarJobError: { type: String, required: false, default: undefined },
+		githubId: { type: String, required: false },
 	},
 	{ versionKey: false },
 );
 
+userSchema.index({ githubId: 1 }, { unique: true, sparse: true });
+
 userSchema.plugin(mongoosePagiante);
 
-export type User = InferSchemaType<typeof userSchema>;
 export type UserDocument = HydratedDocument<User>;
-
-export const userModel = model('user', userSchema) as PaginateModel<User>;
+export const userModel = model<User, PaginateModel<User>>('user', userSchema);
