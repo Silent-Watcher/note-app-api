@@ -10,16 +10,7 @@ const createUserController = (service: IUserService) => ({
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const { id } = req.params;
-			const user = await service.findById(id as string);
-			if (!user) {
-				res.sendError(httpStatus.NOT_FOUND, {
-					code: 'NOT FOUND',
-					message: 'user not found',
-				});
-				return;
-			}
-			res.sendSuccess(httpStatus.OK, { user });
+			res.sendSuccess(httpStatus.OK, { user: req?.user });
 			return;
 		} catch (error) {
 			next(error);

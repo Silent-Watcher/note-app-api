@@ -140,6 +140,21 @@ const zEnv = z.object({
 		.refine((port) => port > 0 && port < 65536, {
 			message: 'CLAMV_PORT must be a valid port number',
 		}),
+
+	GITHUB_CLIENT_ID: z.string().nonempty({
+		message: 'GITHUB_CLIENT_ID is required',
+	}),
+	GITHUB_CLIENT_SECRET: z.string().nonempty({
+		message: 'GITHUB_CLIENT_ID is required',
+	}),
+	GITHUB_CALLBACK_URL: z.string().url().nonempty({
+		message: 'GITHUB_CALLBACK_URL is required',
+	}),
+	GITHUB_STATE_SECRET: z.string().nonempty('GITHUB_STATE_SECRET is required'),
+
+	JWT_ACCESS_SECRET: z.string().nonempty({
+		message: 'JWT_ACCESS_SECRET is required',
+	}),
 });
 
 export type Env = z.infer<typeof zEnv>;

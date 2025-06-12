@@ -11,7 +11,7 @@ const upload = multer({
 
 const userRouterV1 = Router();
 
-userRouterV1.get('/:id', validateIdParam, userController.whoamI);
+userRouterV1.get('/', verifyUser, userController.whoamI);
 
 userRouterV1.patch(
 	'/:id',
