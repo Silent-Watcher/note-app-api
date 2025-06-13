@@ -3,16 +3,13 @@ import type {
 	DeleteResult,
 	FilterQuery,
 	PaginateResult,
-	Types,
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { createHttpError } from '#app/common/utils/http.util';
 import type { MongoQueryOptions } from '#app/config/db/mongo/repository';
-import type { ID } from '#app/config/db/mongo/types';
 import { tagsService } from '../tags/tags.service';
-import type { CreateNotesDto } from './dtos/create-note.dto';
 import type { Note, NoteDocument } from './notes.model';
 import type { INotesRepository } from './notes.repository';
 import { notesRepository } from './notes.repository';
@@ -22,10 +19,7 @@ export interface INotesService {
 		queryOptions: MongoQueryOptions<Note, NoteDocument>,
 	): Promise<PaginateResult<NoteDocument> | NoteDocument[] | []>;
 
-	create(
-		data: CreateNotesDto & { user: ID },
-		session?: ClientSession,
-	): Promise<NoteDocument>;
+	create(dto: Partial<Note>, session?: ClientSession): Promise<NoteDocument>;
 
 	updateOne(
 		filter: FilterQuery<NoteDocument>,
@@ -53,12 +47,12 @@ const createNotesService = (repo: INotesRepository) => ({
 	},
 
 	async create(
-		data: CreateNotesDto & { user: ID },
+		dto: Partial<Note>,
 		session?: ClientSession,
 	): Promise<NoteDocument> {
-		if (data.tags) {
+		if (dto.tags) {
 			const uniqueTags = [
-				...new Set(data.tags?.map((id) => id.toString())),
+				...new Set(dto.tags?.map((id) => id.toString())),
 			];
 			const foundCount = await tagsService.countDocuments({
 				_id: { $in: uniqueTags },
@@ -69,10 +63,10 @@ const createNotesService = (repo: INotesRepository) => ({
 					message: 'One or more tags do not exist.',
 				});
 			}
-			data.tags = uniqueTags;
+			dto.tags = uniqueTags;
 		}
 
-		return repo.create(data);
+		return repo.create(dto, session);
 	},
 
 	async updateOne(
