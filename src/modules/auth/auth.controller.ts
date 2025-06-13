@@ -115,14 +115,6 @@ const createAuthController = (
 				accessToken: newAccessToken,
 			} = await service.refreshTokensV1(refreshToken);
 
-			// res.cookie('refresh_token', newRefreshToken, {
-			// 	httpOnly: true,
-			// 	secure: !CONFIG.DEBUG,
-			// 	sameSite: 'strict',
-			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-			// 	path: '/api/auth/refresh',
-			// });
-
 			sendRefreshTokenCookie(newRefreshToken, res);
 
 			res.sendSuccess(
@@ -181,14 +173,6 @@ const createAuthController = (
 				req.ip as string,
 			);
 			const userObject = user.toObject();
-
-			// res.cookie("refresh_token", refreshToken, {
-			// 	httpOnly: true,
-			// 	sameSite: "strict",
-			// 	secure: !CONFIG.DEBUG,
-			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-			// 	path: "/api/auth/refresh",
-			// });
 
 			sendRefreshTokenCookie(refreshToken, res);
 
@@ -278,14 +262,6 @@ const createAuthController = (
 			const { user, accessToken, refreshToken } =
 				await service.verifyEmail(email, code);
 
-			// res.cookie("refresh_token", refreshToken, {
-			// 	httpOnly: true,
-			// 	secure: !CONFIG.DEBUG,
-			// 	sameSite: "strict",
-			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-			// 	path: "/api/auth/refresh",
-			// });
-
 			sendRefreshTokenCookie(refreshToken, res);
 
 			req.user = user;
@@ -368,16 +344,6 @@ const createAuthController = (
 					isEmailVerified: true,
 				});
 
-				// const tempToken = jwt.sign(
-				// 	{
-				// 		userId: newUser._id,
-				// 		githubId: newUser.githubId,
-				// 		githubOnly: true,
-				// 	},
-				// 	CONFIG.JWT_ACCESS_SECRET,
-				// 	{ expiresIn: "5m" },
-				// );
-
 				const tempToken = issueToken(
 					{
 						userId: newUser._id,
@@ -415,16 +381,6 @@ const createAuthController = (
 					{ expiresIn: '5m' },
 				);
 
-				// const tempToken = jwt.sign(
-				// 	{
-				// 		userId: targetUser._id,
-				// 		githubId: targetUser.githubId,
-				// 		githubOnly: true,
-				// 	},
-				// 	CONFIG.JWT_ACCESS_SECRET,
-				// 	{ expiresIn: "5m" },
-				// );
-
 				res.sendSuccess(
 					httpStatus.ACCEPTED,
 					{
@@ -437,23 +393,11 @@ const createAuthController = (
 				return;
 			}
 
-			// const accessToken = jwt.sign(
-			// 	{ userId: targetUser._id },
-			// 	CONFIG.SECRET.ACCESS_TOKEN,
-			// 	{ expiresIn: "5m" },
-			// );
-
 			const accessToken = issueToken(
 				{ userId: targetUser._id },
 				CONFIG.SECRET.ACCESS_TOKEN,
 				{ expiresIn: '5m' },
 			);
-
-			// const refreshToken = jwt.sign(
-			// 	{ userId: targetUser._id },
-			// 	CONFIG.SECRET.REFRESH_TOKEN,
-			// 	{ expiresIn: "1d" },
-			// );
 
 			const refreshToken = issueToken(
 				{ userId: targetUser._id },
@@ -470,14 +414,6 @@ const createAuthController = (
 					}),
 				),
 			);
-
-			// res.cookie("refresh_token", refreshToken, {
-			// 	httpOnly: true,
-			// 	secure: !CONFIG.DEBUG,
-			// 	sameSite: "strict",
-			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-			// 	path: "/api/auth/refresh",
-			// });
 
 			sendRefreshTokenCookie(refreshToken, res);
 
@@ -579,22 +515,11 @@ const createAuthController = (
 						return;
 					}
 
-					// const accessToken = jwt.sign(
-					// 	{ userId },
-					// 	CONFIG.SECRET.ACCESS_TOKEN,
-					// 	{ expiresIn: "5m" },
-					// );
 					const accessToken = issueToken(
 						{ userId },
 						CONFIG.SECRET.ACCESS_TOKEN,
 						{ expiresIn: '5m' },
 					);
-
-					// const refreshToken = jwt.sign(
-					// 	{ userId },
-					// 	CONFIG.SECRET.REFRESH_TOKEN,
-					// 	{ expiresIn: "1d" },
-					// );
 
 					const refreshToken = issueToken(
 						{ userId },
@@ -611,14 +536,6 @@ const createAuthController = (
 							}),
 						),
 					);
-
-					// res.cookie("refresh_token", refreshToken, {
-					// 	httpOnly: true,
-					// 	secure: !CONFIG.DEBUG,
-					// 	sameSite: "strict",
-					// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-					// 	path: "/api/auth/refresh",
-					// });
 
 					sendRefreshTokenCookie(refreshToken, res);
 

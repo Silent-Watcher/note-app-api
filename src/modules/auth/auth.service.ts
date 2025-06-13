@@ -140,12 +140,6 @@ const createAuthService = (
 		// Rotate: invalidate old and issue new
 		await doc.updateOne({ status: 'invalid' });
 
-		// const newAccessToken = jwt.sign(
-		// 	{ userId },
-		// 	CONFIG.SECRET.ACCESS_TOKEN,
-		// 	{ expiresIn: '5m' },
-		// );
-
 		const newAccessToken = issueToken(
 			{ userId },
 			CONFIG.SECRET.ACCESS_TOKEN,
@@ -157,12 +151,6 @@ const createAuthService = (
 			CONFIG.SECRET.REFRESH_TOKEN,
 			{ expiresIn: '1d' },
 		);
-
-		// const newRefreshToken = jwt.sign(
-		// 	{ userId },
-		// 	CONFIG.SECRET.REFRESH_TOKEN,
-		// 	{ expiresIn: "1d" },
-		// );
 
 		await refreshTokenRepo.create({
 			user: userId,
@@ -220,12 +208,6 @@ const createAuthService = (
 
 		await resetFailures(userIp, 'login:failure:ip');
 
-		// const newAccessToken = jwt.sign(
-		// 	{ userId: foundedUser._id },
-		// 	CONFIG.SECRET.ACCESS_TOKEN,
-		// 	{ expiresIn: "5m" },
-		// );
-
 		const newAccessToken = issueToken(
 			{ userId: foundedUser._id },
 			CONFIG.SECRET.ACCESS_TOKEN,
@@ -237,12 +219,6 @@ const createAuthService = (
 			CONFIG.SECRET.REFRESH_TOKEN,
 			{ expiresIn: '1d' },
 		);
-
-		// const newRefreshToken = jwt.sign(
-		// 	{ userId: foundedUser._id },
-		// 	CONFIG.SECRET.REFRESH_TOKEN,
-		// 	{ expiresIn: "1d" },
-		// );
 
 		await refreshTokenRepo.create({
 			user: foundedUser._id,
@@ -381,18 +357,6 @@ const createAuthService = (
 				CONFIG.SECRET.ACCESS_TOKEN,
 				{ expiresIn: '5m' },
 			);
-
-			// const accessToken = jwt.sign(
-			// 	{ userId: user._id },
-			// 	CONFIG.SECRET.ACCESS_TOKEN,
-			// 	{ expiresIn: "5m" },
-			// );
-
-			// const refreshToken = jwt.sign(
-			// 	{ userId: user._id },
-			// 	CONFIG.SECRET.REFRESH_TOKEN,
-			// 	{ expiresIn: "1d" },
-			// );
 
 			const refreshToken = issueToken(
 				{ userId: user._id },
