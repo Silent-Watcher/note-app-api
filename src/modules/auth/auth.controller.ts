@@ -36,6 +36,7 @@ import { userModel } from '../users/user.model';
 import { userService } from '../users/user.service';
 import { authService } from './auth.service';
 import { refreshTokenModel } from './models/refresh-token.model';
+import { refreshTokenRepository } from './repos/refresh-token.repository';
 
 const createAuthController = (
 	service: IAuthService,
@@ -324,25 +325,33 @@ const createAuthController = (
 			const ghProfile =
 				await getGithubProfileAndEmails(githubAccessToken);
 
-			const targetUser = await unwrap(
-				(await mongo.fire(() =>
-					userModel.findOne({ email: ghProfile.email }),
-				)) as CommandResult<Promise<UserDocument | null>>,
+			const targetUser = await userService.findOneAndUpdate(
+				{
+					email: ghProfile.email,
+				},
+				{ githubId: ghProfile.id },
+				{
+					returnDocument: 'after',
+					lean: true,
+					projection: { githubId: 1, password: 1, _id: 1, email: 1 },
+				},
 			);
 
 			if (!targetUser) {
-				const newUser = await userService.create({
-					avatar: [
-						{
-							source: 'Github',
-							urls: [ghProfile.avatarUrl as string],
-						},
-					],
-					email: ghProfile.email,
-					githubId: ghProfile.id,
-					displayName: ghProfile.email?.split('@')[0],
-					isEmailVerified: true,
-				});
+				const newUser = (
+					await userService.create({
+						avatar: [
+							{
+								source: 'Github',
+								urls: [ghProfile.avatarUrl as string],
+							},
+						],
+						email: ghProfile.email,
+						githubId: ghProfile.id,
+						displayName: ghProfile.email?.split('@')[0],
+						isEmailVerified: true,
+					})
+				).toObject();
 
 				const tempToken = issueToken(
 					{
@@ -357,17 +366,13 @@ const createAuthController = (
 				res.sendSuccess(
 					httpStatus.ACCEPTED,
 					{
-						user: newUser.toObject(),
+						user: { _id: newUser._id, email: newUser.email },
 						needsPassword: true,
 						tempToken,
 					},
 					'user should specify their password',
 				);
 				return;
-			}
-
-			if (!targetUser.githubId) {
-				await targetUser.updateOne({ githubId: ghProfile.id });
 			}
 
 			if (!targetUser?.password) {
@@ -384,7 +389,7 @@ const createAuthController = (
 				res.sendSuccess(
 					httpStatus.ACCEPTED,
 					{
-						user: targetUser.toObject(),
+						user: { _id: targetUser._id, email: targetUser.email },
 						needsPassword: true,
 						tempToken,
 					},
@@ -405,15 +410,11 @@ const createAuthController = (
 				{ expiresIn: '1d' },
 			);
 
-			await unwrap(
-				await mongo.fire(() =>
-					refreshTokenModel.create({
-						hash: refreshToken,
-						rootIssuedAt: dayjs().toDate(),
-						user: targetUser._id,
-					}),
-				),
-			);
+			await refreshTokenRepository.create({
+				user: targetUser._id,
+				hash: refreshToken,
+				rootIssuedAt: dayjs().toDate(),
+			});
 
 			sendRefreshTokenCookie(refreshToken, res);
 

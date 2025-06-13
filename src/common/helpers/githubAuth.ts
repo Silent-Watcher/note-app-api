@@ -2,6 +2,7 @@ import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { CONFIG } from '#app/config';
 import { createHttpError } from '../utils/http.util';
 import { httpStatus } from './httpstatus';
+import { issueToken } from './jwt';
 
 type GitHubProfile = {
 	id: number;
@@ -84,7 +85,7 @@ export async function getGithubProfileAndEmails(token: string): Promise<{
 export function issueGithubState(
 	secret: string = CONFIG.GITHUB.STATE_SECRET,
 ): string {
-	return jwt.sign({ ts: Date.now() }, secret, {
+	return issueToken({ ts: Date.now() }, secret, {
 		expiresIn: '5m',
 	});
 }

@@ -7,9 +7,6 @@ import type {
 } from '../models/refresh-token.model';
 import { refreshTokenModel } from '../models/refresh-token.model';
 
-/**
- * Interface defining the methods for interacting with refresh token documents in the database.
- */
 export interface IRefreshTokenRepository {
 	create(
 		newRefreshToken: Partial<RefreshToken>,
@@ -28,19 +25,9 @@ export interface IRefreshTokenRepository {
 	): Promise<UpdateResult>;
 }
 
-/**
- * Factory function to create an instance of the refresh token repository.
- *
- * Provides methods for creating and finding refresh token documents.
- *
- * @returns {{
- *   create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument>;
- *   findOne(refreshToken: string, userId: Types.ObjectId): Promise<RefreshTokenDocument>;
- * }}
- */
 const createRefreshTokenRepository = () => ({
 	async create(
-		newRefreshToken: RefreshToken,
+		newRefreshToken: Partial<RefreshToken>,
 		session?: ClientSession,
 	): Promise<RefreshTokenDocument> {
 		return unwrap(
@@ -69,12 +56,6 @@ const createRefreshTokenRepository = () => ({
 		);
 	},
 
-	/**
-	 * Invalidates all refresh tokens belonging to the specified user by setting their status to "invalid".
-	 *
-	 * @param {Types.ObjectId} user - The ObjectId of the user whose refresh tokens should be invalidated.
-	 * @returns {Promise<UpdateResult>} A promise that resolves to the result of the updateMany operation.
-	 */
 	async invalidateMany(
 		user: Types.ObjectId,
 		session?: ClientSession,
@@ -93,7 +74,4 @@ const createRefreshTokenRepository = () => ({
 	},
 });
 
-/**
- * Singleton instance of the refresh token repository.
- */
 export const refreshTokenRepository = createRefreshTokenRepository();

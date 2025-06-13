@@ -9,10 +9,12 @@ import type {
 	PaginateResult,
 	PopulateOptions,
 	ProjectionType,
+	QueryOptions,
 	SortOrder,
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
+import type { UserDocument } from '#app/modules/users/user.model';
 import { type CommandResult, unwrap } from '../global';
 import { mongo } from './mongo.condig';
 import type { ExistsResult } from './types';
@@ -203,6 +205,18 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 							.findOne(filter, projection ?? null, { session })
 							.lean()
 					: model.findOne(filter, projection ?? null, { session }),
+			)) as CommandResult<Promise<Doc | null>>,
+		);
+	},
+
+	async findOneAndUpdate(
+		filter: FilterQuery<Doc>,
+		changes: UpdateQuery<Doc>,
+		options: QueryOptions,
+	): Promise<Doc | null> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model.findOneAndUpdate(filter, changes, options),
 			)) as CommandResult<Promise<Doc | null>>,
 		);
 	},

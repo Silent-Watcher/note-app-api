@@ -1,6 +1,7 @@
 import type {
 	FilterQuery,
 	ProjectionType,
+	QueryOptions,
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
@@ -12,6 +13,12 @@ import type { User, UserDocument } from './user.model';
 
 export interface IUserService {
 	findById(id: ID): Promise<UserDocument | null>;
+
+	findOneAndUpdate(
+		filter: FilterQuery<UserDocument>,
+		changes: UpdateQuery<UserDocument>,
+		options: QueryOptions,
+	): Promise<UserDocument | null>;
 
 	findOneByEmail(
 		email: string,
@@ -56,6 +63,14 @@ const createUserService = (repo: IUserRepository) => ({
 		session?: ClientSession,
 	): Promise<UpdateResult> {
 		return repo.updateOne(filter, changes, session);
+	},
+
+	async findOneAndUpdate(
+		filter: FilterQuery<UserDocument>,
+		changes: UpdateQuery<UserDocument>,
+		options: QueryOptions,
+	): Promise<UserDocument | null> {
+		return repo.findOneAndUpdate(filter, changes, options);
 	},
 });
 
