@@ -11,7 +11,6 @@ import { createHttpError } from '#app/common/utils/http.util';
 import type { MongoQueryOptions } from '#app/config/db/mongo/repository';
 import type { ID } from '#app/config/db/mongo/types';
 import { notesService } from '../notes/notes.service';
-import type { CreateTagDto } from './dtos/create-tag.dto';
 import type { Tag, TagDocument } from './tags.model';
 import { type ITagsRepository, tagsRepository } from './tags.repository';
 
@@ -20,7 +19,7 @@ export interface ITagsService {
 		queryOptions: MongoQueryOptions<Tag, TagDocument>,
 	): Promise<PaginateResult<TagDocument> | TagDocument[] | []>;
 	deleteOne(id: ID): Promise<DeleteResult>;
-	create(newTag: CreateTagDto & { user: ID }): Promise<TagDocument>;
+	create(dto: Partial<Tag>): Promise<TagDocument>;
 	updateOne(id: ID, changes: Partial<Tag>): Promise<UpdateResult>;
 	countDocuments(
 		filter: FilterQuery<TagDocument>,
@@ -35,8 +34,8 @@ const createTagsService = (repo: ITagsRepository) => ({
 		return repo.getAll(queryOptions);
 	},
 
-	async create(newTag: CreateTagDto & { user: ID }): Promise<TagDocument> {
-		const { name, color, parent, user } = newTag;
+	async create(dto: Partial<Tag>): Promise<TagDocument> {
+		const { name, color, parent, user } = dto;
 
 		if (parent) {
 			const result = await repo.isExists({
