@@ -1,15 +1,20 @@
 import dayjs from 'dayjs';
-import {
-	type HydratedDocument,
-	type InferSchemaType,
-	Schema,
-	Types,
-	model,
-} from 'mongoose';
+import { Schema, Types, model } from 'mongoose';
+import type { HydratedDocument, PaginateModel } from 'mongoose';
+import mongoosePagiante from 'mongoose-paginate-v2';
+import type { ID } from '#app/config/db/mongo/types';
+
+export type Otp = {
+	user: ID;
+	code: string;
+	type: 'email_verification';
+	expiresAt: Date;
+	used: boolean;
+};
 
 const otpSchema = new Schema(
 	{
-		userId: {
+		user: {
 			type: Types.ObjectId,
 			ref: 'users',
 			required: true,
@@ -37,13 +42,13 @@ const otpSchema = new Schema(
 	{ timestamps: true, versionKey: false },
 );
 
+otpSchema.plugin(mongoosePagiante);
+
 // compound index to prevent duplicate active OTPs
-// otpSchema.index(
-// 	{ userId: 1, type: 1, used: 1 },
-// 	{ unique: true, partialFilterExpression: { used: false } },
-// );
+otpSchema.index(
+	{ userId: 1, type: 1, used: 1 },
+	{ unique: true, partialFilterExpression: { used: false } },
+);
 
-export type Otp = InferSchemaType<typeof otpSchema>;
 export type OtpDocument = HydratedDocument<Otp>;
-
-export const otpModel = model<OtpDocument>('otp', otpSchema);
+export const otpModel = model<Otp, PaginateModel<Otp>>('otp', otpSchema);

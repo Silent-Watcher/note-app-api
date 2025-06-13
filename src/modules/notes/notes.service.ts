@@ -75,7 +75,7 @@ const createNotesService = (repo: INotesRepository) => ({
 		session?: ClientSession,
 	): Promise<UpdateResult> {
 		// ! validation and checks!
-		return repo.updateOne(filter, changes);
+		return repo.updateOne(filter, changes, session);
 	},
 
 	updateMany(
@@ -90,7 +90,7 @@ const createNotesService = (repo: INotesRepository) => ({
 		filter: FilterQuery<NoteDocument>,
 		session?: ClientSession,
 	): Promise<DeleteResult> {
-		return repo.deleteOne(filter);
+		return repo.deleteOne(filter, session);
 	},
 });
 

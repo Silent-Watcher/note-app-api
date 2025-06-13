@@ -7,9 +7,6 @@ import {
 	passwordResetModel,
 } from '../models/password-reset.model';
 
-/**
- * Interface defining the methods for interacting with password reset documents in the database.
- */
 export interface IPasswordResetRepository {
 	create(
 		user: Types.ObjectId,
@@ -23,16 +20,6 @@ export interface IPasswordResetRepository {
 	): Promise<PasswordResetDocument | null>;
 }
 
-/**
- * Factory function to create an instance of the refresh token repository.
- *
- * Provides methods for creating and finding refresh token documents.
- *
- * @returns {{
- *   create(newRefreshToken: RefreshToken): Promise<RefreshTokenDocument>;
- *   findValidByTokenHash(token: string): Promise<PasswordResetDocument | null>;
- * }}
- */
 const createPasswordResetRepository = () => ({
 	async create(
 		user: Types.ObjectId,
@@ -74,7 +61,4 @@ const createPasswordResetRepository = () => ({
 	},
 });
 
-/**
- * Singleton instance of the password reset repository.
- */
 export const passwordResetRepository = createPasswordResetRepository();

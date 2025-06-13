@@ -1,18 +1,13 @@
-import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
-import {
-	type IUserRepository,
-	userRepository,
-} from '#app/modules/users/user.repository';
-
 import type {
 	FilterQuery,
 	ProjectionType,
-	Types,
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
 import type { ClientSession } from 'mongoose';
 import type { ID } from '#app/config/db/mongo/types';
+import { userRepository } from '#app/modules/users/user.repository';
+import type { IUserRepository } from '#app/modules/users/user.repository';
 import type { User, UserDocument } from './user.model';
 
 export interface IUserService {
@@ -25,10 +20,7 @@ export interface IUserService {
 		session?: ClientSession,
 	): Promise<UserDocument | null>;
 
-	updatePassword(
-		id: Types.ObjectId,
-		newPassword: string,
-	): Promise<UpdateResult>;
+	updatePassword(id: ID, newPassword: string): Promise<UpdateResult>;
 
 	create(dto: Partial<User>): Promise<UserDocument>;
 
@@ -54,10 +46,7 @@ const createUserService = (repo: IUserRepository) => ({
 	async create(dto: Partial<User>): Promise<UserDocument> {
 		return repo.create(dto);
 	},
-	updatePassword(
-		id: Types.ObjectId,
-		newPassword: string,
-	): Promise<UpdateResult> {
+	updatePassword(id: ID, newPassword: string): Promise<UpdateResult> {
 		return repo.updateOne({ _id: id }, { password: newPassword });
 	},
 

@@ -1,24 +1,20 @@
 import { Schema, model } from 'mongoose';
-import type {
-	HydratedDocument,
-	InferSchemaType,
-	PaginateModel,
-} from 'mongoose';
+import type { HydratedDocument, PaginateModel } from 'mongoose';
 import mongoosePagiante from 'mongoose-paginate-v2';
 
-type Avatar = {
+export type Avatar = {
 	source: string;
 	urls: string[];
 };
 
 export type User = {
 	displayName?: string;
-	avatar?: Avatar[]; // default: []
+	avatar?: Avatar[];
 	email: string;
 	password: string;
-	mobile?: string; // default: undefined
-	isMobileVerfied?: boolean; // default: false
-	isEmailVerified: boolean; // required with default: false
+	mobile?: string;
+	isMobileVerfied?: boolean;
+	isEmailVerified: boolean;
 	pendingAvatarJobId?: string;
 	avatarJobError?: string;
 	githubId?: string;
@@ -64,7 +60,6 @@ const userSchema = new Schema(
 );
 
 userSchema.index({ githubId: 1 }, { unique: true, sparse: true });
-
 userSchema.plugin(mongoosePagiante);
 
 export type UserDocument = HydratedDocument<User>;
