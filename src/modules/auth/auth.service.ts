@@ -1,12 +1,10 @@
 import { compare, hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import mongoose, {
-	startSession,
-	type Types,
-	type UpdateResult,
-} from 'mongoose';
+import mongoose, { startSession } from 'mongoose';
+import type { Types, UpdateResult } from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { issueToken } from '#app/common/helpers/jwt';
 import { generateOtp } from '#app/common/helpers/otp';
 import { recordFailure, resetFailures } from '#app/common/helpers/redis';
 import { generateSecureResetPasswordToken } from '#app/common/helpers/resetPasswordToken';
@@ -18,11 +16,10 @@ import { userService } from '#app/modules/users/user.service';
 import type { UserDocument } from '../users/user.model';
 import type { LoginUserDto } from './dtos/login-user.dto';
 import type { OtpDocument } from './models/otp.model';
-import { type IOtpRepository, otpRepository } from './repos/otp.repository';
-import {
-	type IPasswordResetRepository,
-	passwordResetRepository,
-} from './repos/password-reset.repository';
+import type { IOtpRepository } from './repos/otp.repository';
+import { otpRepository } from './repos/otp.repository';
+import type { IPasswordResetRepository } from './repos/password-reset.repository';
+import { passwordResetRepository } from './repos/password-reset.repository';
 import type { IRefreshTokenRepository } from './repos/refresh-token.repository';
 import { refreshTokenRepository } from './repos/refresh-token.repository';
 
@@ -143,17 +140,29 @@ const createAuthService = (
 		// Rotate: invalidate old and issue new
 		await doc.updateOne({ status: 'invalid' });
 
-		const newAccessToken = jwt.sign(
+		// const newAccessToken = jwt.sign(
+		// 	{ userId },
+		// 	CONFIG.SECRET.ACCESS_TOKEN,
+		// 	{ expiresIn: '5m' },
+		// );
+
+		const newAccessToken = issueToken(
 			{ userId },
 			CONFIG.SECRET.ACCESS_TOKEN,
 			{ expiresIn: '5m' },
 		);
 
-		const newRefreshToken = jwt.sign(
+		const newRefreshToken = issueToken(
 			{ userId },
 			CONFIG.SECRET.REFRESH_TOKEN,
 			{ expiresIn: '1d' },
 		);
+
+		// const newRefreshToken = jwt.sign(
+		// 	{ userId },
+		// 	CONFIG.SECRET.REFRESH_TOKEN,
+		// 	{ expiresIn: "1d" },
+		// );
 
 		await refreshTokenRepo.create({
 			user: userId,
@@ -211,17 +220,29 @@ const createAuthService = (
 
 		await resetFailures(userIp, 'login:failure:ip');
 
-		const newAccessToken = jwt.sign(
+		// const newAccessToken = jwt.sign(
+		// 	{ userId: foundedUser._id },
+		// 	CONFIG.SECRET.ACCESS_TOKEN,
+		// 	{ expiresIn: "5m" },
+		// );
+
+		const newAccessToken = issueToken(
 			{ userId: foundedUser._id },
 			CONFIG.SECRET.ACCESS_TOKEN,
 			{ expiresIn: '5m' },
 		);
 
-		const newRefreshToken = jwt.sign(
+		const newRefreshToken = issueToken(
 			{ userId: foundedUser._id },
 			CONFIG.SECRET.REFRESH_TOKEN,
 			{ expiresIn: '1d' },
 		);
+
+		// const newRefreshToken = jwt.sign(
+		// 	{ userId: foundedUser._id },
+		// 	CONFIG.SECRET.REFRESH_TOKEN,
+		// 	{ expiresIn: "1d" },
+		// );
 
 		await refreshTokenRepo.create({
 			user: foundedUser._id,
@@ -355,13 +376,25 @@ const createAuthService = (
 			);
 			await otp.updateOne({ used: true }, { session });
 
-			const accessToken = jwt.sign(
+			const accessToken = issueToken(
 				{ userId: user._id },
 				CONFIG.SECRET.ACCESS_TOKEN,
 				{ expiresIn: '5m' },
 			);
 
-			const refreshToken = jwt.sign(
+			// const accessToken = jwt.sign(
+			// 	{ userId: user._id },
+			// 	CONFIG.SECRET.ACCESS_TOKEN,
+			// 	{ expiresIn: "5m" },
+			// );
+
+			// const refreshToken = jwt.sign(
+			// 	{ userId: user._id },
+			// 	CONFIG.SECRET.REFRESH_TOKEN,
+			// 	{ expiresIn: "1d" },
+			// );
+
+			const refreshToken = issueToken(
 				{ userId: user._id },
 				CONFIG.SECRET.REFRESH_TOKEN,
 				{ expiresIn: '1d' },

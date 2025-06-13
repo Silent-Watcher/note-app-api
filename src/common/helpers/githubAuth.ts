@@ -35,7 +35,6 @@ export async function getGithubTokenFromCode(code: string): Promise<string> {
 	);
 
 	const res = await response.json();
-	console.log('res: ', res);
 	if (res.error) {
 		throw createHttpError(httpStatus.BAD_GATEWAY, {
 			code: 'BAD GATEWAY',
@@ -71,8 +70,6 @@ export async function getGithubProfileAndEmails(token: string): Promise<{
 
 	const profile: GitHubProfile = await profileResponse.json();
 	const emails: GitHubEmail[] = await emailsResponse.json();
-	console.log('profile: ', profile);
-	console.log('emails: ', emails);
 
 	return {
 		id: profile.id.toString(),

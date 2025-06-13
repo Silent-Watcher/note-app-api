@@ -1,23 +1,12 @@
 import type { Job } from 'bullmq';
 import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
-import {
-	getGithubProfileAndEmails,
-	getGithubTokenFromCode,
-	issueGithubState,
-	validateGithubState,
-} from '#app/common/helpers/githubAuth';
-import { httpStatus } from '#app/common/helpers/httpstatus';
-import { mailGenerator } from '#app/common/helpers/mailgen';
-import { isIpBlocked } from '#app/common/helpers/redis';
-import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
-import { generateVerifyEmailTemplate } from '#app/common/utils/email/templates/verify-email.template';
-import { logger } from '#app/common/utils/logger.util';
-import { CONFIG } from '#app/config';
+import type { DecodedToken } from '#app/common/helpers/jwt';
+import type { CommandResult } from '#app/config/db/global';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
-import { enqueueEmail } from '#app/queues/emailQueue';
+import type { UserDocument } from '../users/user.model';
+import type { IUserService } from '../users/user.service';
 import type { IAuthService } from './auth.service';
-import { authService } from './auth.service';
 import type { ForgotPasswordDto } from './dtos/forgot-password.dto';
 import type { LoginUserDto } from './dtos/login-user.dto';
 import type { ResetPasswordDto } from './dtos/reset-password.dto';
@@ -26,11 +15,26 @@ import type { VerifyEmailDto } from './dtos/verify-email.dto';
 import { hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
-import type { DecodedToken } from '#app/common/helpers/jwt';
-import { type CommandResult, unwrap } from '#app/config/db/global';
+import {
+	getGithubProfileAndEmails,
+	getGithubTokenFromCode,
+	issueGithubState,
+	validateGithubState,
+} from '#app/common/helpers/githubAuth';
+import { httpStatus } from '#app/common/helpers/httpstatus';
+import { issueToken, sendRefreshTokenCookie } from '#app/common/helpers/jwt';
+import { mailGenerator } from '#app/common/helpers/mailgen';
+import { isIpBlocked } from '#app/common/helpers/redis';
+import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
+import { generateVerifyEmailTemplate } from '#app/common/utils/email/templates/verify-email.template';
+import { logger } from '#app/common/utils/logger.util';
+import { CONFIG } from '#app/config';
+import { unwrap } from '#app/config/db/global';
 import { mongo } from '#app/config/db/mongo/mongo.condig';
-import { type User, type UserDocument, userModel } from '../users/user.model';
-import { type IUserService, userService } from '../users/user.service';
+import { enqueueEmail } from '#app/queues/emailQueue';
+import { userModel } from '../users/user.model';
+import { userService } from '../users/user.service';
+import { authService } from './auth.service';
 import { refreshTokenModel } from './models/refresh-token.model';
 
 const createAuthController = (
@@ -111,13 +115,15 @@ const createAuthController = (
 				accessToken: newAccessToken,
 			} = await service.refreshTokensV1(refreshToken);
 
-			res.cookie('refresh_token', newRefreshToken, {
-				httpOnly: true,
-				secure: !CONFIG.DEBUG,
-				sameSite: 'strict',
-				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/api/auth/refresh',
-			});
+			// res.cookie('refresh_token', newRefreshToken, {
+			// 	httpOnly: true,
+			// 	secure: !CONFIG.DEBUG,
+			// 	sameSite: 'strict',
+			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+			// 	path: '/api/auth/refresh',
+			// });
+
+			sendRefreshTokenCookie(newRefreshToken, res);
 
 			res.sendSuccess(
 				httpStatus.CREATED,
@@ -176,13 +182,15 @@ const createAuthController = (
 			);
 			const userObject = user.toObject();
 
-			res.cookie('refresh_token', refreshToken, {
-				httpOnly: true,
-				sameSite: 'strict',
-				secure: !CONFIG.DEBUG,
-				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/api/auth/refresh',
-			});
+			// res.cookie("refresh_token", refreshToken, {
+			// 	httpOnly: true,
+			// 	sameSite: "strict",
+			// 	secure: !CONFIG.DEBUG,
+			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+			// 	path: "/api/auth/refresh",
+			// });
+
+			sendRefreshTokenCookie(refreshToken, res);
 
 			req.user = user;
 
@@ -270,13 +278,15 @@ const createAuthController = (
 			const { user, accessToken, refreshToken } =
 				await service.verifyEmail(email, code);
 
-			res.cookie('refresh_token', refreshToken, {
-				httpOnly: true,
-				secure: !CONFIG.DEBUG,
-				sameSite: 'strict',
-				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/api/auth/refresh',
-			});
+			// res.cookie("refresh_token", refreshToken, {
+			// 	httpOnly: true,
+			// 	secure: !CONFIG.DEBUG,
+			// 	sameSite: "strict",
+			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+			// 	path: "/api/auth/refresh",
+			// });
+
+			sendRefreshTokenCookie(refreshToken, res);
 
 			req.user = user;
 
@@ -330,34 +340,19 @@ const createAuthController = (
 			}
 			// verify state
 			validateGithubState(state as string);
-			console.log('github state valid');
 
 			const githubAccessToken = await getGithubTokenFromCode(
 				code as string,
 			);
 
-			console.log('githubAccessToken: ', githubAccessToken);
 			const ghProfile =
 				await getGithubProfileAndEmails(githubAccessToken);
-			console.log('githubProfile: ', ghProfile);
-
-			// add user to database
-			// issue your tokens!
-			// return response!
-			// githubProfile:  {
-			// 	id: 91375198,
-			// 	username: 'Silent-Watcher',
-			// 	avatarUrl: 'https://avatars.githubusercontent.com/u/91375198?v=4',
-			// 	email: 'alitabatabaee20@gmail.com'
-			//   }
 
 			const targetUser = await unwrap(
 				(await mongo.fire(() =>
 					userModel.findOne({ email: ghProfile.email }),
 				)) as CommandResult<Promise<UserDocument | null>>,
 			);
-
-			console.log('targetUser: ', targetUser);
 
 			if (!targetUser) {
 				const newUser = await userService.create({
@@ -373,7 +368,17 @@ const createAuthController = (
 					isEmailVerified: true,
 				});
 
-				const tempToken = jwt.sign(
+				// const tempToken = jwt.sign(
+				// 	{
+				// 		userId: newUser._id,
+				// 		githubId: newUser.githubId,
+				// 		githubOnly: true,
+				// 	},
+				// 	CONFIG.JWT_ACCESS_SECRET,
+				// 	{ expiresIn: "5m" },
+				// );
+
+				const tempToken = issueToken(
 					{
 						userId: newUser._id,
 						githubId: newUser.githubId,
@@ -400,7 +405,7 @@ const createAuthController = (
 			}
 
 			if (!targetUser?.password) {
-				const tempToken = jwt.sign(
+				const tempToken = issueToken(
 					{
 						userId: targetUser._id,
 						githubId: targetUser.githubId,
@@ -409,6 +414,16 @@ const createAuthController = (
 					CONFIG.JWT_ACCESS_SECRET,
 					{ expiresIn: '5m' },
 				);
+
+				// const tempToken = jwt.sign(
+				// 	{
+				// 		userId: targetUser._id,
+				// 		githubId: targetUser.githubId,
+				// 		githubOnly: true,
+				// 	},
+				// 	CONFIG.JWT_ACCESS_SECRET,
+				// 	{ expiresIn: "5m" },
+				// );
 
 				res.sendSuccess(
 					httpStatus.ACCEPTED,
@@ -422,13 +437,25 @@ const createAuthController = (
 				return;
 			}
 
-			const accessToken = jwt.sign(
+			// const accessToken = jwt.sign(
+			// 	{ userId: targetUser._id },
+			// 	CONFIG.SECRET.ACCESS_TOKEN,
+			// 	{ expiresIn: "5m" },
+			// );
+
+			const accessToken = issueToken(
 				{ userId: targetUser._id },
 				CONFIG.SECRET.ACCESS_TOKEN,
 				{ expiresIn: '5m' },
 			);
 
-			const refreshToken = jwt.sign(
+			// const refreshToken = jwt.sign(
+			// 	{ userId: targetUser._id },
+			// 	CONFIG.SECRET.REFRESH_TOKEN,
+			// 	{ expiresIn: "1d" },
+			// );
+
+			const refreshToken = issueToken(
 				{ userId: targetUser._id },
 				CONFIG.SECRET.REFRESH_TOKEN,
 				{ expiresIn: '1d' },
@@ -444,13 +471,15 @@ const createAuthController = (
 				),
 			);
 
-			res.cookie('refresh_token', refreshToken, {
-				httpOnly: true,
-				secure: !CONFIG.DEBUG,
-				sameSite: 'strict',
-				maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-				path: '/api/auth/refresh',
-			});
+			// res.cookie("refresh_token", refreshToken, {
+			// 	httpOnly: true,
+			// 	secure: !CONFIG.DEBUG,
+			// 	sameSite: "strict",
+			// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+			// 	path: "/api/auth/refresh",
+			// });
+
+			sendRefreshTokenCookie(refreshToken, res);
 
 			req.user = targetUser;
 
@@ -550,13 +579,24 @@ const createAuthController = (
 						return;
 					}
 
-					const accessToken = jwt.sign(
+					// const accessToken = jwt.sign(
+					// 	{ userId },
+					// 	CONFIG.SECRET.ACCESS_TOKEN,
+					// 	{ expiresIn: "5m" },
+					// );
+					const accessToken = issueToken(
 						{ userId },
 						CONFIG.SECRET.ACCESS_TOKEN,
 						{ expiresIn: '5m' },
 					);
 
-					const refreshToken = jwt.sign(
+					// const refreshToken = jwt.sign(
+					// 	{ userId },
+					// 	CONFIG.SECRET.REFRESH_TOKEN,
+					// 	{ expiresIn: "1d" },
+					// );
+
+					const refreshToken = issueToken(
 						{ userId },
 						CONFIG.SECRET.REFRESH_TOKEN,
 						{ expiresIn: '1d' },
@@ -572,13 +612,15 @@ const createAuthController = (
 						),
 					);
 
-					res.cookie('refresh_token', refreshToken, {
-						httpOnly: true,
-						secure: !CONFIG.DEBUG,
-						sameSite: 'strict',
-						maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
-						path: '/api/auth/refresh',
-					});
+					// res.cookie("refresh_token", refreshToken, {
+					// 	httpOnly: true,
+					// 	secure: !CONFIG.DEBUG,
+					// 	sameSite: "strict",
+					// 	maxAge: 23 * 60 * 60 * 1000, // slightly lower to prevent race condition
+					// 	path: "/api/auth/refresh",
+					// });
+
+					sendRefreshTokenCookie(refreshToken, res);
 
 					req.user = updatedUser;
 
