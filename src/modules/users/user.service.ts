@@ -1,4 +1,5 @@
 import type {
+	DeleteResult,
 	FilterQuery,
 	ProjectionType,
 	QueryOptions,
@@ -36,6 +37,11 @@ export interface IUserService {
 		changes: UpdateQuery<UserDocument>,
 		session?: ClientSession,
 	): Promise<UpdateResult>;
+
+	deleteOne(
+		filter: FilterQuery<UserDocument>,
+		session?: ClientSession,
+	): Promise<DeleteResult>;
 }
 
 const createUserService = (repo: IUserRepository) => ({
@@ -71,6 +77,13 @@ const createUserService = (repo: IUserRepository) => ({
 		options: QueryOptions,
 	): Promise<UserDocument | null> {
 		return repo.findOneAndUpdate(filter, changes, options);
+	},
+
+	deleteOne(
+		filter: FilterQuery<UserDocument>,
+		session?: ClientSession,
+	): Promise<DeleteResult> {
+		return repo.deleteOne(filter, session);
 	},
 });
 

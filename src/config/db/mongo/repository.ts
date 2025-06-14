@@ -14,7 +14,6 @@ import type {
 	UpdateQuery,
 	UpdateResult,
 } from 'mongoose';
-import type { UserDocument } from '#app/modules/users/user.model';
 import { type CommandResult, unwrap } from '../global';
 import { mongo } from './mongo.condig';
 import type { ExistsResult } from './types';

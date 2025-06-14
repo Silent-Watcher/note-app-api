@@ -1,6 +1,8 @@
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { CONFIG } from '#app/config';
+import { createHttpError } from '../utils/http.util';
+import { httpStatus } from './httpstatus';
 export interface DecodedToken extends jwt.JwtPayload {
 	userId: string;
 	githubId: string;
@@ -23,4 +25,24 @@ export function sendRefreshTokenCookie(token: string, res: Response): void {
 		path: '/api/auth/refresh',
 	});
 	return;
+}
+
+export function fetchTokenFromTheHeader(req: Request): string {
+	const authHeader = req.headers.authorization;
+	if (!authHeader) {
+		throw createHttpError(httpStatus.FORBIDDEN, {
+			code: 'FORBIDDEN',
+			message: 'authorization header not found',
+		});
+	}
+	const token = authHeader?.split(' ')[1];
+
+	if (!token) {
+		throw createHttpError(httpStatus.FORBIDDEN, {
+			code: 'FORBIDDEN',
+			message: 'token not found!',
+		});
+	}
+
+	return token;
 }

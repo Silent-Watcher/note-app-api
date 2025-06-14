@@ -22,7 +22,11 @@ import {
 	validateGithubState,
 } from '#app/common/helpers/githubAuth';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import { issueToken, sendRefreshTokenCookie } from '#app/common/helpers/jwt';
+import {
+	fetchTokenFromTheHeader,
+	issueToken,
+	sendRefreshTokenCookie,
+} from '#app/common/helpers/jwt';
 import { mailGenerator } from '#app/common/helpers/mailgen';
 import { isIpBlocked } from '#app/common/helpers/redis';
 import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/templates/password-reset.template';
@@ -418,8 +422,6 @@ const createAuthController = (
 
 			sendRefreshTokenCookie(refreshToken, res);
 
-			req.user = targetUser;
-
 			res.sendSuccess(
 				httpStatus.OK,
 				{
@@ -442,23 +444,7 @@ const createAuthController = (
 		try {
 			const { password } = req.body;
 
-			const authHeader = req.headers.authorization;
-			if (!authHeader) {
-				res.sendError(httpStatus.FORBIDDEN, {
-					code: 'FORBIDDEN',
-					message: 'authorization header not found',
-				});
-				return;
-			}
-			const tempToken = authHeader?.split(' ')[1];
-
-			if (!tempToken) {
-				res.sendError(httpStatus.FORBIDDEN, {
-					code: 'FORBIDDEN',
-					message: 'token not found!',
-				});
-				return;
-			}
+			const tempToken = fetchTokenFromTheHeader(req);
 
 			jwt.verify(
 				tempToken,
@@ -470,14 +456,10 @@ const createAuthController = (
 					const { userId, githubId } = decoded as DecodedToken;
 
 					if (err instanceof jwt.TokenExpiredError) {
-						await unwrap(
-							await mongo.fire(() =>
-								userModel.deleteOne({
-									_id: userId,
-									githubId: githubId,
-								}),
-							),
-						);
+						await userService.deleteOne({
+							_id: userId,
+							githubId: githubId,
+						});
 						res.sendError(httpStatus.BAD_REQUEST, {
 							code: 'BAD REQUEST',
 							message: 'token expired',
@@ -493,54 +475,18 @@ const createAuthController = (
 						return;
 					}
 
-					const newPassword = await hash(password, 10);
-
-					const updatedUser = await unwrap(
-						(await mongo.fire(() =>
-							userModel.findOneAndUpdate(
-								{
-									_id: userId,
-									githubId,
-								},
-								{ $set: { password: newPassword } },
-								{ returnDocument: 'after' },
-							),
-						)) as CommandResult<UserDocument | null>,
-					);
-
-					if (!updatedUser) {
-						res.sendError(httpStatus.BAD_REQUEST, {
-							code: 'BAD REQUEST',
-							message: 'user not found',
-						});
-						return;
-					}
-
-					const accessToken = issueToken(
-						{ userId },
-						CONFIG.SECRET.ACCESS_TOKEN,
-						{ expiresIn: '5m' },
-					);
-
-					const refreshToken = issueToken(
-						{ userId },
-						CONFIG.SECRET.REFRESH_TOKEN,
-						{ expiresIn: '1d' },
-					);
-
-					await unwrap(
-						await mongo.fire(() =>
-							refreshTokenModel.create({
-								hash: refreshToken,
-								rootIssuedAt: dayjs().toDate(),
-								user: userId,
-							}),
-						),
+					const {
+						accessToken,
+						refreshToken,
+						user: updatedUser,
+					} = await service.authenticateUserFromOauthService(
+						userId,
+						password,
+						'github',
+						githubId,
 					);
 
 					sendRefreshTokenCookie(refreshToken, res);
-
-					req.user = updatedUser;
 
 					res.sendSuccess(httpStatus.OK, {
 						accessToken,

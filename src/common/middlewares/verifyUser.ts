@@ -1,7 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import type { DecodedToken } from '#app/common/helpers/jwt';
+import {
+	type DecodedToken,
+	fetchTokenFromTheHeader,
+} from '#app/common/helpers/jwt';
 import { covertToObjectId } from '#app/common/helpers/mongo';
 import { CONFIG } from '#app/config';
 import type { UserDocument } from '#app/modules/users/user.model';
@@ -12,23 +15,7 @@ export function verifyUser(
 	res: Response,
 	next: NextFunction,
 ): void {
-	const authHeader = req.headers.authorization;
-	if (!authHeader) {
-		res.sendError(httpStatus.FORBIDDEN, {
-			code: 'FORBIDDEN',
-			message: 'authorization header not found',
-		});
-		return;
-	}
-	const accessToken = authHeader?.split(' ')[1];
-
-	if (!accessToken) {
-		res.sendError(httpStatus.FORBIDDEN, {
-			code: 'FORBIDDEN',
-			message: 'access token not found!',
-		});
-		return;
-	}
+	const accessToken = fetchTokenFromTheHeader(req);
 
 	// In development mode (e.g., when testing via Postman), if the placeholder access token "{{access_token}}"
 	// is sent instead of a real token, block the request with a 403 Forbidden error.

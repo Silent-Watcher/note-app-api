@@ -61,6 +61,17 @@ export interface IAuthService {
 		type: 'email_verification',
 		userId: Types.ObjectId,
 	): Promise<OtpDocument>;
+
+	authenticateUserFromOauthService(
+		userId: string,
+		password: string,
+		oauthType?: 'github',
+		oauthId?: string,
+	): Promise<{
+		accessToken: string;
+		refreshToken: string;
+		user: UserDocument;
+	}>;
 }
 
 const createAuthService = (
@@ -399,6 +410,79 @@ const createAuthService = (
 		const code = generateOtp(5);
 		const otp = await otpRepo.create(type, code, userId);
 		return otp;
+	},
+
+	async authenticateUserFromOauthService(
+		userId: string,
+		password: string,
+		oauthType?: 'github',
+		oauthId?: string,
+	): Promise<{
+		accessToken: string;
+		refreshToken: string;
+		user: UserDocument;
+	}> {
+		const session = await mongoose.startSession();
+		try {
+			const newPassword = await hash(password, 10);
+			session.startTransaction();
+
+			const updatedUser = await userService.findOneAndUpdate(
+				{
+					_id: userId,
+					...(oauthType === 'github' ? { githubId: oauthId } : {}),
+				},
+				{ $set: { password: newPassword } },
+				{
+					returnDocument: 'after',
+					projection: { _id: 1, email: 1 },
+					lean: true,
+					session,
+				},
+			);
+
+			if (!updatedUser) {
+				throw createHttpError(httpStatus.BAD_REQUEST, {
+					code: 'BAD REQUEST',
+					message: 'user not found',
+				});
+			}
+
+			const accessToken = issueToken(
+				{ userId },
+				CONFIG.SECRET.ACCESS_TOKEN,
+				{ expiresIn: '5m' },
+			);
+
+			const refreshToken = issueToken(
+				{ userId },
+				CONFIG.SECRET.REFRESH_TOKEN,
+				{ expiresIn: '1d' },
+			);
+
+			await refreshTokenRepo.create(
+				{
+					hash: refreshToken,
+					rootIssuedAt: dayjs().toDate(),
+					user: updatedUser._id,
+				},
+				session,
+			);
+
+			await session.commitTransaction();
+			return { refreshToken, accessToken, user: updatedUser };
+		} catch (error) {
+			await session.abortTransaction();
+			logger.error(
+				`Transaction aborted due to: ${(error as Error)?.message}`,
+			);
+			throw createHttpError(httpStatus.INTERNAL_SERVER_ERROR, {
+				code: 'INTERNAL SERVER ERROR',
+				message: 'Transaction failed',
+			});
+		} finally {
+			await session.endSession();
+		}
 	},
 });
 
