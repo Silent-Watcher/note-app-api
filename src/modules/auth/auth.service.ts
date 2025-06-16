@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
 import mongoose, { startSession } from 'mongoose';
 import type { Types, UpdateResult } from 'mongoose';
+import { getGravatarUrl } from '#app/common/helpers/gravatar';
 import { httpStatus } from '#app/common/helpers/httpstatus';
 import { issueToken } from '#app/common/helpers/jwt';
 import { generateOtp } from '#app/common/helpers/otp';
@@ -358,6 +359,12 @@ const createAuthService = (
 				{
 					isEmailVerified: true,
 					displayName: email.split('@').at(0),
+					$addToSet: {
+						avatar: {
+							source: 'gravatar',
+							urls: [getGravatarUrl(email)],
+						},
+					},
 				},
 				{ session },
 			);
@@ -427,26 +434,57 @@ const createAuthService = (
 			const newPassword = await hash(password, 10);
 			session.startTransaction();
 
-			const updatedUser = await userService.findOneAndUpdate(
+			// const updatedUser = await userService.findOneAndUpdate(
+			// {
+			// 	_id: userId,
+			// 	...(oauthType === "github" ? { githubId: oauthId } : {}),
+			// },
+			// 	{
+			// $set: { password: newPassword },
+			// $addToSet: {
+			// 	avatar: {
+			// 		source: "gravatar",
+			// 		urls: [getGravatarUrl(email)],
+			// 	},
+			// },
+			// 	},
+			// 	{
+			// 		returnDocument: "after",
+			// 		projection: { _id: 1, email: 1 },
+			// 		lean: true,
+			// 		session,
+			// 	},
+			// );
+
+			const foundedUser = await userService.findOne(
 				{
 					_id: userId,
 					...(oauthType === 'github' ? { githubId: oauthId } : {}),
 				},
-				{ $set: { password: newPassword } },
-				{
-					returnDocument: 'after',
-					projection: { _id: 1, email: 1 },
-					lean: true,
-					session,
-				},
+				{ password: 1, avatar: 1, _id: 1, email: 1 },
+				false,
+				session,
 			);
 
-			if (!updatedUser) {
+			if (!foundedUser) {
 				throw createHttpError(httpStatus.BAD_REQUEST, {
 					code: 'BAD REQUEST',
 					message: 'user not found',
 				});
 			}
+
+			const updatedUser = await foundedUser?.updateOne(
+				{
+					$set: { password: newPassword },
+					$addToSet: {
+						avatar: {
+							source: 'gravatar',
+							urls: [getGravatarUrl(foundedUser.email)],
+						},
+					},
+				},
+				{ session, lean: true },
+			);
 
 			const accessToken = issueToken(
 				{ userId },
@@ -464,13 +502,13 @@ const createAuthService = (
 				{
 					hash: refreshToken,
 					rootIssuedAt: dayjs().toDate(),
-					user: updatedUser._id,
+					user: foundedUser._id,
 				},
 				session,
 			);
 
 			await session.commitTransaction();
-			return { refreshToken, accessToken, user: updatedUser };
+			return { refreshToken, accessToken, user: foundedUser };
 		} catch (error) {
 			await session.abortTransaction();
 			logger.error(

@@ -20,6 +20,13 @@ export interface IUserService {
 		session?: ClientSession,
 	): Promise<UserDocument | null>;
 
+	findOne(
+		filter: FilterQuery<UserDocument>,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null>;
+
 	findOneAndUpdate(
 		filter: FilterQuery<UserDocument>,
 		changes: UpdateQuery<UserDocument>,
@@ -50,6 +57,20 @@ export interface IUserService {
 }
 
 const createUserService = (repo: IUserRepository) => ({
+	findOne(
+		filter: FilterQuery<UserDocument>,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null> {
+		return repo.findOne(
+			filter,
+			projection ?? { password: 0 },
+			lean,
+			session,
+		);
+	},
+
 	findById(
 		id: ID,
 		projection?: ProjectionType<UserDocument>,
