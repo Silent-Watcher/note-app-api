@@ -25,6 +25,7 @@ export interface ITagsService {
 		filter: FilterQuery<TagDocument>,
 		session?: ClientSession,
 	): Promise<number>;
+	countMatching(filter: FilterQuery<TagDocument>): Promise<number>;
 }
 
 const createTagsService = (repo: ITagsRepository) => ({
@@ -121,6 +122,10 @@ const createTagsService = (repo: ITagsRepository) => ({
 		session?: ClientSession,
 	): Promise<number> {
 		return repo.countDocuments(filter, session);
+	},
+
+	countMatching(filter: FilterQuery<TagDocument>): Promise<number> {
+		return repo.countMatching(filter);
 	},
 });
 

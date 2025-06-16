@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 import { httpStatus } from '#app/common/helpers/httpstatus';
-import { notesService } from '#app/modules/notes/notes.service';
+import { tagsService } from '#app/modules/tags/tags.service';
 
-export async function enforceNotesLimit(
+export async function enforceTagsLimit(
 	req: Request,
 	res: Response,
 	next: NextFunction,
@@ -23,15 +23,15 @@ export async function enforceNotesLimit(
 			return;
 		}
 
-		const notesNumber = await notesService.countMatching({
+		const tagsNumber = await tagsService.countMatching({
 			user: verifiedUser._id,
 		});
 
-		if (notesNumber === 5) {
+		if (tagsNumber === 5) {
 			res.sendError(httpStatus.FORBIDDEN, {
 				code: 'FORBIDDEN',
 				message:
-					'You have reached the maximum number of notes allowed for non-vip users.',
+					'You have reached the maximum number of tags allowed for non-vip users.',
 			});
 			return;
 		}
