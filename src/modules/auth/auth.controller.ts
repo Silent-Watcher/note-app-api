@@ -2,9 +2,7 @@ import type { Job } from 'bullmq';
 import type { NextFunction, Request, Response } from 'express';
 import type { Types } from 'mongoose';
 import type { DecodedToken } from '#app/common/helpers/jwt';
-import type { CommandResult } from '#app/config/db/global';
 import type { CreateUserDto } from '#app/modules/users/dtos/create-user.dto';
-import type { UserDocument } from '../users/user.model';
 import type { IUserService } from '../users/user.service';
 import type { IAuthService } from './auth.service';
 import type { ForgotPasswordDto } from './dtos/forgot-password.dto';
@@ -12,7 +10,6 @@ import type { LoginUserDto } from './dtos/login-user.dto';
 import type { ResetPasswordDto } from './dtos/reset-password.dto';
 import type { VerifyEmailDto } from './dtos/verify-email.dto';
 
-import { hash } from 'bcrypt';
 import dayjs from 'dayjs';
 import jwt from 'jsonwebtoken';
 import {
@@ -33,13 +30,9 @@ import { generatePasswordResetEmailTemplate } from '#app/common/utils/email/temp
 import { generateVerifyEmailTemplate } from '#app/common/utils/email/templates/verify-email.template';
 import { logger } from '#app/common/utils/logger.util';
 import { CONFIG } from '#app/config';
-import { unwrap } from '#app/config/db/global';
-import { mongo } from '#app/config/db/mongo/mongo.condig';
 import { enqueueEmail } from '#app/queues/emailQueue';
-import { userModel } from '../users/user.model';
 import { userService } from '../users/user.service';
 import { authService } from './auth.service';
-import { refreshTokenModel } from './models/refresh-token.model';
 import { refreshTokenRepository } from './repos/refresh-token.repository';
 
 const createAuthController = (

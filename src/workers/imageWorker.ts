@@ -45,9 +45,14 @@ export const imageWorker = new Worker<UploadImageData, AvatarImageData>(
 		}
 		await job.updateProgress(10);
 
+		// 2:NSFW check with DeepStack
+
+		await job.updateProgress(15);
+		// 3:
+
 		await ensureBucket(bucket);
 
-		// 2: Resize & convert to WebP in parallel
+		// 4: Resize & convert to WebP in parallel
 		const uploadTasks = imageSizes.map(
 			async ({ suffix, width, height }, index) => {
 				const outBuf = await sharp(buf)

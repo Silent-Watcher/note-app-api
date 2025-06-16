@@ -37,6 +37,8 @@ export interface INotesService {
 		filter: FilterQuery<NoteDocument>,
 		session?: ClientSession,
 	): Promise<DeleteResult>;
+
+	countMatching(filter: FilterQuery<NoteDocument>): Promise<number>;
 }
 
 const createNotesService = (repo: INotesRepository) => ({
@@ -91,6 +93,10 @@ const createNotesService = (repo: INotesRepository) => ({
 		session?: ClientSession,
 	): Promise<DeleteResult> {
 		return repo.deleteOne(filter, session);
+	},
+
+	countMatching(filter: FilterQuery<NoteDocument>): Promise<number> {
+		return repo.countMatching(filter);
 	},
 });
 

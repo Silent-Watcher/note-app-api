@@ -82,4 +82,9 @@ export const CONFIG = Object.freeze({
 	}),
 
 	JWT_ACCESS_SECRET: _env.JWT_ACCESS_SECRET,
+
+	SIGHTENGINE: Object.freeze({
+		API_SECRET: _env.SIGHTENGINE_API_SECRET,
+		API_USER: _env.SIGHTENGINE_API_USER,
+	}),
 });
