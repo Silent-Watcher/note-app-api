@@ -13,7 +13,19 @@ import type { IUserRepository } from '#app/modules/users/user.repository';
 import type { User, UserDocument } from './user.model';
 
 export interface IUserService {
-	findById(id: ID): Promise<UserDocument | null>;
+	findById(
+		id: ID,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null>;
+
+	findOne(
+		filter: FilterQuery<UserDocument>,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null>;
 
 	findOneAndUpdate(
 		filter: FilterQuery<UserDocument>,
@@ -45,8 +57,32 @@ export interface IUserService {
 }
 
 const createUserService = (repo: IUserRepository) => ({
-	findById(id: ID): Promise<UserDocument | null> {
-		return repo.findOne({ _id: id }, { password: 0 });
+	findOne(
+		filter: FilterQuery<UserDocument>,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null> {
+		return repo.findOne(
+			filter,
+			projection ?? { password: 0 },
+			lean,
+			session,
+		);
+	},
+
+	findById(
+		id: ID,
+		projection?: ProjectionType<UserDocument>,
+		lean?: boolean,
+		session?: ClientSession,
+	): Promise<UserDocument | null> {
+		return repo.findOne(
+			{ _id: id },
+			projection ?? { password: 0 },
+			lean ?? true,
+			session,
+		);
 	},
 	async findOneByEmail(
 		email: string,

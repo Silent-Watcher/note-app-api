@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { enforceTagsLimit } from '#app/common/guards/tags.guard';
 import {
 	validateBody,
 	validateIdParam,
@@ -10,7 +11,12 @@ import { tagsController } from './tags.controller';
 const tagsRouterV1 = Router();
 
 tagsRouterV1.get('/', tagsController.getAll);
-tagsRouterV1.post('/', validateBody(zCreateTagDto), tagsController.create);
+tagsRouterV1.post(
+	'/',
+	enforceTagsLimit,
+	validateBody(zCreateTagDto),
+	tagsController.create,
+);
 tagsRouterV1.delete('/:id', validateIdParam, tagsController.deleteOne);
 tagsRouterV1.put(
 	'/:id',

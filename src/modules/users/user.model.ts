@@ -18,6 +18,7 @@ export type User = {
 	pendingAvatarJobId?: string;
 	avatarJobError?: string;
 	githubId?: string;
+	isVip: boolean;
 };
 
 const avatarSchema = new Schema(
@@ -55,6 +56,7 @@ const userSchema = new Schema(
 		},
 		avatarJobError: { type: String, required: false, default: undefined },
 		githubId: { type: String, required: false },
+		isVip: { type: Boolean, required: true, default: false },
 	},
 	{ versionKey: false },
 );

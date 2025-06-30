@@ -219,4 +219,12 @@ export const createBaseRepository = <T, Doc extends HydratedDocument<T>>(
 			)) as CommandResult<Promise<Doc | null>>,
 		);
 	},
+
+	async countMatching(filter: FilterQuery<Doc>): Promise<number> {
+		return unwrap(
+			(await mongo.fire(() =>
+				model.countDocuments(filter),
+			)) as CommandResult<Promise<number>>,
+		);
+	},
 });

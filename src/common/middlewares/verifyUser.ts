@@ -49,7 +49,9 @@ export function verifyUser(
 			}
 
 			const user = await userService.findById(
-				covertToObjectId((decoded as DecodedToken).userId),
+				(decoded as DecodedToken).userId,
+				{ password: 0 },
+				true,
 			);
 
 			if (!user) {
@@ -59,7 +61,8 @@ export function verifyUser(
 				});
 				return;
 			}
-			req.user = user.toObject() as UserDocument;
+
+			req.user = user;
 			next();
 		},
 	);

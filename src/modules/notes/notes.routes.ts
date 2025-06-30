@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { enforceNotesLimit } from '#app/common/guards/notes.guard';
 import { cache } from '#app/common/utils/cache/cache.util';
 import {
 	validateBody,
@@ -19,7 +20,12 @@ notesRouterV1.get(
 	notesController.getAll,
 );
 
-notesRouterV1.post('/', validateBody(zCreateNotesDto), notesController.create);
+notesRouterV1.post(
+	'/',
+	enforceNotesLimit,
+	validateBody(zCreateNotesDto),
+	notesController.create,
+);
 
 notesRouterV1
 	.route('/:id')

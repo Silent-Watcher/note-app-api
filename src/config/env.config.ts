@@ -155,6 +155,13 @@ const zEnv = z.object({
 	JWT_ACCESS_SECRET: z.string().nonempty({
 		message: 'JWT_ACCESS_SECRET is required',
 	}),
+
+	SIGHTENGINE_API_USER: z.string().nonempty({
+		message: 'SIGHTENGINE_API_USER is required',
+	}),
+	SIGHTENGINE_API_SECRET: z.string().nonempty({
+		message: 'SIGHTENGINE_API_SECRET is required',
+	}),
 });
 
 export type Env = z.infer<typeof zEnv>;

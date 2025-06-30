@@ -7,10 +7,10 @@ import { responseMiddleware } from '#app/common/middlewares/global/response';
 import { CONFIG } from '#app/config';
 
 export function configureMiddleware(app: Application) {
+	app.use(responseMiddleware);
+
 	app.use(express.json({ limit: '100kb' }));
 	app.use(express.urlencoded({ extended: true }));
-
-	app.use(responseMiddleware);
 
 	app.set('view engine', 'ejs');
 	app.set('views', path.join(process.cwd(), 'src', 'resources'));

@@ -1,5 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { httpStatus } from '#app/common/helpers/httpstatus';
+import { logger } from '#app/common/utils/logger.util';
 import { enqueueImage } from '#app/queues/imageQueue';
 import { type IUserService, userService } from './user.service';
 
@@ -22,14 +24,18 @@ const createUserController = (service: IUserService) => ({
 		res: Response,
 		next: NextFunction,
 	): Promise<void> {
+		const session = await mongoose.startSession();
 		try {
 			const { id } = req.params;
 			const changes = req.body;
 			let imageUploadJobId: undefined | string = undefined;
 
+			session.startTransaction();
+
 			const { acknowledged } = await service.updateOne(
 				{ _id: id },
 				changes,
+				session,
 			);
 
 			if (!acknowledged) {
@@ -62,9 +68,11 @@ const createUserController = (service: IUserService) => ({
 					{
 						$set: { pendingAvatarJobId: imageUploadJobId },
 					},
+					session,
 				);
 			}
 
+			await session.commitTransaction();
 			res.sendSuccess(httpStatus.ACCEPTED, {}, 'update success!', {
 				...(req.file
 					? {
@@ -77,7 +85,13 @@ const createUserController = (service: IUserService) => ({
 			});
 			return;
 		} catch (error) {
+			await session.abortTransaction();
+			logger.error(
+				`Transaction aborted due to: ${(error as Error)?.message}`,
+			);
 			next(error);
+		} finally {
+			await session.endSession();
 		}
 	},
 });
