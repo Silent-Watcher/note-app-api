@@ -2,6 +2,9 @@ import express from 'express';
 import { router as apiRouter } from '#app/api/';
 import { configureMiddleware } from '#app/common/middlewares/global';
 import { configureErrorHandler } from '#app/common/middlewares/global/errorHandler';
+import { setupProcessHandlers } from './process';
+
+setupProcessHandlers();
 
 export const app = express();
 
